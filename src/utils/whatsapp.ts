@@ -9,6 +9,10 @@ export function toAuthEmail(phone: string): string {
   return `${phone}@prime.local`
 }
 
+export function stripAuthSuffix(email: string): string {
+  return email.replace('@prime.local', '')
+}
+
 const CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
 
 export function generatePassword(): string {

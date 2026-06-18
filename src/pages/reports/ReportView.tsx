@@ -37,7 +37,7 @@ type Report = {
 export function ReportView() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { phone: userPhone } = useAuth()
+  const { phone: userPhone, name: userName } = useAuth()
   const [report, setReport] = useState<Report | null>(null)
   const [loading, setLoading] = useState(true)
   const printRef = useRef<HTMLDivElement>(null)
@@ -123,7 +123,7 @@ export function ReportView() {
           )}
 
           <div className="border-t border-gray-100 pt-4 text-xs text-gray-400">
-            Filed by: {userPhone ?? 'Unknown'} on {report.report_date}
+            Filed by: {userName ?? userPhone ?? 'Unknown'} on {report.report_date}
           </div>
         </div>
       </div>

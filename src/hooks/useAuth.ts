@@ -2,10 +2,10 @@ import { useEffect, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
 
-type Profile = { role: string; phone: string }
+type Profile = { role: string; phone: string; name: string | null }
 
 async function fetchProfile(userId: string): Promise<Profile | null> {
-  const { data } = await supabase.from('profiles').select('role, phone').eq('id', userId).single()
+  const { data } = await supabase.from('profiles').select('role, phone, name').eq('id', userId).single()
   return data ?? null
 }
 
@@ -29,5 +29,5 @@ export function useAuth() {
     return () => subscription.unsubscribe()
   }, [])
 
-  return { session, loading, role: profile?.role ?? null, phone: profile?.phone ?? null, isAdmin: profile?.role === 'admin' }
+  return { session, loading, role: profile?.role ?? null, phone: profile?.phone ?? null, name: profile?.name ?? null, isAdmin: profile?.role === 'admin' }
 }
