@@ -40,6 +40,18 @@ export function InviteUser() {
     const password = generatePassword()
     const normalizedPhone = normalizePhone(phone)
 
+    const { data: existing } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('phone', normalizedPhone)
+      .maybeSingle()
+
+    if (existing) {
+      setError('A user with this phone number already exists.')
+      setSaving(false)
+      return
+    }
+
     const { data, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email: toAuthEmail(normalizedPhone),
       password,
