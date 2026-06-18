@@ -14,6 +14,9 @@ const CHECKLIST_LABELS: Record<string, string> = {
   air_leaks: 'Checked for air leaks',
 }
 
+type SelectedSpare = { id: string; code: string; name: string; qty: number; unit_price: number; amount: number }
+type SelectedService = { id: string; code: string; name: string; price: number }
+
 type Report = {
   id: string
   customer_id: string
@@ -22,16 +25,12 @@ type Report = {
   remarks: string
   hours_run: number
   hours_until_next: number
-  spares_cost: number
+  total_amount: number
   next_service_date: string
   checklist: Record<string, boolean>
-  customer: {
-    name: string
-    org: string
-    phone: string
-    gst: string
-    model: string
-  }
+  selected_spares: SelectedSpare[]
+  selected_services: SelectedService[]
+  customer: { name: string; org: string; phone: string; gst: string; model: string }
 }
 
 export function ReportView() {
@@ -59,6 +58,12 @@ export function ReportView() {
   if (loading) return <Layout><p className="text-gray-400 text-sm">Loading...</p></Layout>
   if (!report) return <Layout><p className="text-red-500 text-sm">Report not found.</p></Layout>
 
+  const spares: SelectedSpare[] = report.selected_spares ?? []
+  const services: SelectedService[] = report.selected_services ?? []
+  const sparesTotal = spares.reduce((sum, s) => sum + s.amount, 0)
+  const servicesTotal = services.reduce((sum, s) => sum + s.price, 0)
+  const grandTotal = report.total_amount ?? (sparesTotal + servicesTotal)
+
   return (
     <Layout>
       <div className="max-w-2xl">
@@ -68,16 +73,12 @@ export function ReportView() {
             <h2 className="text-xl font-semibold text-gray-900">Service Report</h2>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => navigate(`/customers/${report.customer_id}/reports`)}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
-            >
+            <button onClick={() => navigate(`/customers/${report.customer_id}/reports`)}
+              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">
               Report History
             </button>
-            <button
-              onClick={() => handlePrint()}
-              className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
-            >
+            <button onClick={() => handlePrint()}
+              className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors">
               Print
             </button>
           </div>
@@ -100,7 +101,6 @@ export function ReportView() {
             <InfoRow label="Hours Run" value={String(report.hours_run)} />
             <InfoRow label="Hours Until Next" value={String(report.hours_until_next)} />
             <InfoRow label="Next Service Date" value={report.next_service_date} />
-            <InfoRow label="Spares Cost" value={`₹${report.spares_cost?.toFixed(2) || '0.00'}`} />
           </div>
 
           <div>
@@ -112,6 +112,72 @@ export function ReportView() {
                   <span className={done ? 'text-gray-800' : 'text-gray-400'}>{CHECKLIST_LABELS[key] || key}</span>
                 </div>
               ))}
+            </div>
+          </div>
+
+          {spares.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Spare Parts Used</p>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-xs text-gray-400 border-b border-gray-100">
+                    <th className="pb-1">Code</th><th className="pb-1">Name</th>
+                    <th className="pb-1 text-right">Qty</th>
+                    <th className="pb-1 text-right">Unit Price</th>
+                    <th className="pb-1 text-right">Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {spares.map(s => (
+                    <tr key={s.id} className="border-b border-gray-50">
+                      <td className="py-1.5 font-mono text-gray-600 text-xs">{s.code}</td>
+                      <td className="py-1.5 text-gray-800">{s.name}</td>
+                      <td className="py-1.5 text-right text-gray-600">{s.qty}</td>
+                      <td className="py-1.5 text-right text-gray-600">₹{s.unit_price.toFixed(2)}</td>
+                      <td className="py-1.5 text-right font-medium text-gray-900">₹{s.amount.toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {services.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Services Performed</p>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="text-left text-xs text-gray-400 border-b border-gray-100">
+                    <th className="pb-1">Code</th><th className="pb-1">Name</th>
+                    <th className="pb-1 text-right">Price</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {services.map(s => (
+                    <tr key={s.id} className="border-b border-gray-50">
+                      <td className="py-1.5 font-mono text-gray-600 text-xs">{s.code}</td>
+                      <td className="py-1.5 text-gray-800">{s.name}</td>
+                      <td className="py-1.5 text-right font-medium text-gray-900">₹{s.price.toFixed(2)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          <div className="border-t border-gray-100 pt-4 space-y-1">
+            {spares.length > 0 && (
+              <div className="flex justify-between text-sm text-gray-500">
+                <span>Spares Total</span><span>₹{sparesTotal.toFixed(2)}</span>
+              </div>
+            )}
+            {services.length > 0 && (
+              <div className="flex justify-between text-sm text-gray-500">
+                <span>Services Total</span><span>₹{servicesTotal.toFixed(2)}</span>
+              </div>
+            )}
+            <div className="flex justify-between text-sm font-semibold text-gray-900 pt-1">
+              <span>Grand Total</span><span>₹{grandTotal.toFixed(2)}</span>
             </div>
           </div>
 

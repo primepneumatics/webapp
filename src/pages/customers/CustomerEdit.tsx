@@ -3,26 +3,33 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { Layout } from '../../components/Layout'
 
-type Form = {
-  gst: string
-  name: string
-  org: string
-  address: string
-  phone: string
-  model: string
-  spares: string
-}
+type SparePart = { id: string; code: string; name: string }
+type Form = { gst: string; name: string; org: string; address: string; phone: string; model: string }
 
 export function CustomerEdit() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const [form, setForm] = useState<Form>({
-    gst: '', name: '', org: '', address: '', phone: '', model: '', spares: '',
-  })
+  const [form, setForm] = useState<Form>({ gst: '', name: '', org: '', address: '', phone: '', model: '' })
+  const [spareParts, setSpareParts] = useState<SparePart[]>([])
+  const [selectedSpareIds, setSelectedSpareIds] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [gstError, setGstError] = useState('')
+
+  useEffect(() => {
+    Promise.all([
+      supabase.from('customers').select('*').eq('id', id).single(),
+      supabase.from('spare_parts').select('id, code, name').order('code'),
+    ]).then(([{ data: customer }, { data: parts }]) => {
+      if (customer) {
+        setForm({ gst: customer.gst || '', name: customer.name || '', org: customer.org || '', address: customer.address || '', phone: customer.phone || '', model: customer.model || '' })
+        setSelectedSpareIds(customer.spare_part_ids ?? [])
+      }
+      if (parts) setSpareParts(parts)
+      setLoading(false)
+    })
+  }, [id])
 
   async function checkGst() {
     if (!form.gst) return
@@ -30,26 +37,15 @@ export function CustomerEdit() {
     setGstError(data ? 'A customer with this GST number already exists.' : '')
   }
 
-  useEffect(() => {
-    supabase.from('customers').select('*').eq('id', id).single().then(({ data }) => {
-      if (data) {
-        setForm({
-          gst: data.gst || '',
-          name: data.name || '',
-          org: data.org || '',
-          address: data.address || '',
-          phone: data.phone || '',
-          model: data.model || '',
-          spares: data.spares || '',
-        })
-      }
-      setLoading(false)
-    })
-  }, [id])
-
   function set(field: keyof Form) {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       setForm(f => ({ ...f, [field]: e.target.value }))
+  }
+
+  function toggleSpare(spareId: string) {
+    setSelectedSpareIds(prev =>
+      prev.includes(spareId) ? prev.filter(x => x !== spareId) : [...prev, spareId]
+    )
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -60,7 +56,7 @@ export function CustomerEdit() {
 
     const { error } = await supabase
       .from('customers')
-      .update({ ...form, updated_at: new Date().toISOString() })
+      .update({ ...form, spare_part_ids: selectedSpareIds, updated_at: new Date().toISOString() })
       .eq('id', id)
 
     if (error) {
@@ -77,9 +73,7 @@ export function CustomerEdit() {
     <Layout>
       <div className="max-w-xl">
         <div className="flex items-center gap-3 mb-6">
-          <button onClick={() => navigate(`/customers/${id}`)} className="text-gray-400 hover:text-gray-600">
-            ← Back
-          </button>
+          <button onClick={() => navigate(`/customers/${id}`)} className="text-gray-400 hover:text-gray-600">← Back</button>
           <h2 className="text-xl font-semibold text-gray-900">Edit Customer</h2>
         </div>
 
@@ -90,15 +84,30 @@ export function CustomerEdit() {
           <Field label="Address" value={form.address} onChange={set('address')} textarea />
           <Field label="Phone Number *" value={form.phone} onChange={set('phone')} type="tel" required />
           <Field label="Model Number" value={form.model} onChange={set('model')} />
-          <Field label="Spares Required" value={form.spares} onChange={set('spares')} textarea />
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Spares Required</label>
+            {spareParts.length === 0 ? (
+              <p className="text-xs text-gray-400">No spare parts in master list yet. Add them via Admin → Spare Parts.</p>
+            ) : (
+              <div className="border border-gray-300 rounded-lg p-3 space-y-2 max-h-48 overflow-y-auto">
+                {spareParts.map(p => (
+                  <label key={p.id} className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" checked={selectedSpareIds.includes(p.id)} onChange={() => toggleSpare(p.id)}
+                      className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                    <span className="text-sm text-gray-700">
+                      <span className="font-mono text-gray-400 text-xs mr-1">{p.code}</span>{p.name}
+                    </span>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
 
           {error && <p className="text-sm text-red-600">{error}</p>}
 
-          <button
-            type="submit"
-            disabled={saving}
-            className="w-full bg-blue-600 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors"
-          >
+          <button type="submit" disabled={saving}
+            className="w-full bg-blue-600 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors">
             {saving ? 'Saving...' : 'Save Changes'}
           </button>
         </form>
@@ -110,15 +119,9 @@ export function CustomerEdit() {
 function Field({
   label, value, onChange, onBlur, type = 'text', required, placeholder, textarea, error,
 }: {
-  label: string
-  value: string
+  label: string; value: string
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void
-  onBlur?: () => void
-  type?: string
-  required?: boolean
-  placeholder?: string
-  textarea?: boolean
-  error?: string
+  onBlur?: () => void; type?: string; required?: boolean; placeholder?: string; textarea?: boolean; error?: string
 }) {
   const cls = 'w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500'
   return (

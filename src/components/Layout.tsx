@@ -16,7 +16,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const nav = [
     { to: '/dashboard', label: 'Dashboard' },
     { to: '/customers', label: 'Customers' },
-    ...(isAdmin ? [{ to: '/admin/invite', label: 'Invite User' }] : []),
+    ...(isAdmin ? [
+      { to: '/admin/invite', label: 'Invite User' },
+      { to: '/admin/spare-parts', label: 'Spare Parts' },
+      { to: '/admin/service-types', label: 'Service Types' },
+    ] : []),
   ]
 
   return (

@@ -10,6 +10,8 @@ import { CustomerReports } from './pages/customers/CustomerReports'
 import { ReportNew } from './pages/reports/ReportNew'
 import { ReportView } from './pages/reports/ReportView'
 import { InviteUser } from './pages/admin/InviteUser'
+import { SparePartsList } from './pages/admin/SparePartsList'
+import { ServiceTypesList } from './pages/admin/ServiceTypesList'
 import { Profile } from './pages/Profile'
 
 export default function App() {
@@ -28,6 +30,8 @@ export default function App() {
         <Route path="/customers/:id/reports/new" element={<ProtectedRoute><ReportNew /></ProtectedRoute>} />
         <Route path="/reports/:id" element={<ProtectedRoute><ReportView /></ProtectedRoute>} />
         <Route path="/admin/invite" element={<ProtectedRoute><InviteUser /></ProtectedRoute>} />
+        <Route path="/admin/spare-parts" element={<ProtectedRoute><SparePartsList /></ProtectedRoute>} />
+        <Route path="/admin/service-types" element={<ProtectedRoute><ServiceTypesList /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
       </Routes>
     </BrowserRouter>
