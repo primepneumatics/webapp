@@ -4,15 +4,16 @@ import { supabaseAdmin } from '../../lib/supabaseAdmin'
 import { supabase } from '../../lib/supabase'
 import { Layout } from '../../components/Layout'
 import { useAuth } from '../../hooks/useAuth'
-import { generatePassword, buildInviteLink } from '../../utils/whatsapp'
+import { generatePassword, buildInviteLink, toAuthEmail } from '../../utils/whatsapp'
 
 export function InviteUser() {
   const navigate = useNavigate()
-  const { isAdmin } = useAuth()
+  const { isAdmin, loading } = useAuth()
   const [phone, setPhone] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
+  if (loading) return null
   if (!isAdmin) return <Navigate to="/dashboard" replace />
 
   async function handleInvite(e: React.FormEvent) {
@@ -23,7 +24,7 @@ export function InviteUser() {
     const password = generatePassword()
 
     const { data, error: createError } = await supabaseAdmin.auth.admin.createUser({
-      email: phone,
+      email: toAuthEmail(phone),
       password,
       email_confirm: true,
     })

@@ -1,3 +1,7 @@
+export function toAuthEmail(phone: string): string {
+  return `${phone}@prime.local`
+}
+
 const CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789'
 
 export function generatePassword(): string {

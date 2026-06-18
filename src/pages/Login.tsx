@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { toAuthEmail } from '../utils/whatsapp'
 
 export function Login() {
   const navigate = useNavigate()
@@ -15,7 +16,7 @@ export function Login() {
     setLoading(true)
 
     const { error } = await supabase.auth.signInWithPassword({
-      email: phone,
+      email: toAuthEmail(phone),
       password,
     })
 
