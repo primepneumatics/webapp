@@ -59,11 +59,18 @@ export function InviteUser() {
       created_at: new Date().toISOString(),
     }
 
-    await supabase.from('profiles').insert({
+    const { error: profileError } = await supabase.from('profiles').insert({
       id: data.user.id,
       phone: normalizedPhone,
       role: 'user',
     })
+
+    if (profileError) {
+      await supabaseAdmin.auth.admin.deleteUser(data.user.id)
+      setError('Failed to create user profile. Please try again.')
+      setSaving(false)
+      return
+    }
 
     setUsers(prev => [newProfile, ...prev])
     setPhone('')
