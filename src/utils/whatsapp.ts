@@ -6,6 +6,7 @@ export function normalizePhone(raw: string): string {
 }
 
 export function toAuthEmail(phone: string): string {
+  if (phone.includes('@')) return phone
   return `${phone}@prime.local`
 }
 
