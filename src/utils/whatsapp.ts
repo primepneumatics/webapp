@@ -1,3 +1,10 @@
+export function normalizePhone(raw: string): string {
+  const digits = raw.replace(/\D/g, '') // strip +, spaces, dashes
+  if (digits.length === 10) return `91${digits}` // bare 10-digit → add country code
+  if (digits.length === 11 && digits.startsWith('0')) return `91${digits.slice(1)}` // 0xxxxxxxxxx → 91xxxxxxxxxx
+  return digits
+}
+
 export function toAuthEmail(phone: string): string {
   return `${phone}@prime.local`
 }
