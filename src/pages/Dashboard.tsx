@@ -60,6 +60,7 @@ export function Dashboard() {
             <thead>
               <tr className="border-b border-gray-100 text-left">
                 <th className="px-4 py-3 font-medium text-gray-600">Customer</th>
+                <th className="px-4 py-3 font-medium text-gray-600">Phone</th>
                 <th className="px-4 py-3 font-medium text-gray-600">Model</th>
                 <th className="px-4 py-3 font-medium text-gray-600">Due Date</th>
                 <th className="px-4 py-3 font-medium text-gray-600">Status</th>
@@ -72,6 +73,7 @@ export function Dashboard() {
                 return (
                   <tr key={s.id} className="border-b border-gray-50 hover:bg-gray-50">
                     <td className="px-4 py-3 font-medium text-gray-900">{s.customer.name}</td>
+                    <td className="px-4 py-3 text-gray-600">{s.customer.phone}</td>
                     <td className="px-4 py-3 text-gray-600">{s.customer.model || '—'}</td>
                     <td className="px-4 py-3 text-gray-600">{s.next_service_date}</td>
                     <td className="px-4 py-3">

@@ -22,6 +22,13 @@ export function CustomerEdit() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [gstError, setGstError] = useState('')
+
+  async function checkGst() {
+    if (!form.gst) return
+    const { data } = await supabase.from('customers').select('id').eq('gst', form.gst).neq('id', id).maybeSingle()
+    setGstError(data ? 'A customer with this GST number already exists.' : '')
+  }
 
   useEffect(() => {
     supabase.from('customers').select('*').eq('id', id).single().then(({ data }) => {
@@ -47,6 +54,7 @@ export function CustomerEdit() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    if (gstError) return
     setError('')
     setSaving(true)
 
@@ -76,7 +84,7 @@ export function CustomerEdit() {
         </div>
 
         <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
-          <Field label="GST Number" value={form.gst} onChange={set('gst')} placeholder="e.g. 24AAAAA0000A1Z5" />
+          <Field label="GST Number" value={form.gst} onChange={set('gst')} onBlur={checkGst} placeholder="e.g. 24AAAAA0000A1Z5" error={gstError} />
           <Field label="Customer Name *" value={form.name} onChange={set('name')} required />
           <Field label="Organisation Name" value={form.org} onChange={set('org')} />
           <Field label="Address" value={form.address} onChange={set('address')} textarea />
@@ -100,24 +108,27 @@ export function CustomerEdit() {
 }
 
 function Field({
-  label, value, onChange, type = 'text', required, placeholder, textarea,
+  label, value, onChange, onBlur, type = 'text', required, placeholder, textarea, error,
 }: {
   label: string
   value: string
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void
+  onBlur?: () => void
   type?: string
   required?: boolean
   placeholder?: string
   textarea?: boolean
+  error?: string
 }) {
   const cls = 'w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500'
   return (
     <div>
       <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
       {textarea
-        ? <textarea value={value} onChange={onChange} rows={2} placeholder={placeholder} className={cls} />
-        : <input type={type} value={value} onChange={onChange} required={required} placeholder={placeholder} className={cls} />
+        ? <textarea value={value} onChange={onChange} onBlur={onBlur} rows={2} placeholder={placeholder} className={cls} />
+        : <input type={type} value={value} onChange={onChange} onBlur={onBlur} required={required} placeholder={placeholder} className={cls} />
       }
+      {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
     </div>
   )
 }

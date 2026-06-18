@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useReactToPrint } from 'react-to-print'
 import { supabase } from '../../lib/supabase'
 import { Layout } from '../../components/Layout'
+import { useAuth } from '../../hooks/useAuth'
 
 const CHECKLIST_LABELS: Record<string, string> = {
   air_filter: 'Replaced air filter',
@@ -36,6 +37,7 @@ type Report = {
 export function ReportView() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { phone: userPhone } = useAuth()
   const [report, setReport] = useState<Report | null>(null)
   const [loading, setLoading] = useState(true)
   const printRef = useRef<HTMLDivElement>(null)
@@ -119,6 +121,10 @@ export function ReportView() {
               <p className="text-sm text-gray-700">{report.remarks}</p>
             </div>
           )}
+
+          <div className="border-t border-gray-100 pt-4 text-xs text-gray-400">
+            Filed by: {userPhone ?? 'Unknown'} on {report.report_date}
+          </div>
         </div>
       </div>
     </Layout>
