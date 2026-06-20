@@ -28,3 +28,9 @@ export function endOfWeek(): Date {
 export function today(): string {
   return toISODate(new Date())
 }
+
+export function toDisplayDate(isoDate: string): string {
+  if (!isoDate) return '—'
+  const [y, m, d] = isoDate.split('-')
+  return `${d}-${m}-${y}`
+}

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { Layout } from '../../components/Layout'
-import { calcNextServiceDate, toISODate, today } from '../../utils/dateEngine'
+import { calcNextServiceDate, toISODate, toDisplayDate, today } from '../../utils/dateEngine'
 
 const CHECKLIST_ITEMS = [
   { key: 'air_filter', label: 'Replaced air filter' },
@@ -184,7 +184,7 @@ export function ReportNew() {
 
             {form.hours_until_next && (
               <p className="text-xs text-blue-600">
-                Next service date: {toISODate(calcNextServiceDate(new Date(form.report_date), parseFloat(form.hours_until_next)))}
+                Next service date: {toDisplayDate(toISODate(calcNextServiceDate(new Date(form.report_date), parseFloat(form.hours_until_next))))}
               </p>
             )}
 

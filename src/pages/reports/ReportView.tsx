@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useReactToPrint } from 'react-to-print'
 import { supabase } from '../../lib/supabase'
+import { toDisplayDate } from '../../utils/dateEngine'
 import { Layout } from '../../components/Layout'
 import { useAuth } from '../../hooks/useAuth'
 
@@ -96,11 +97,11 @@ export function ReportView() {
             <InfoRow label="Phone" value={report.customer.phone} />
             <InfoRow label="GST" value={report.customer.gst} />
             <InfoRow label="Model" value={report.customer.model} />
-            <InfoRow label="Report Date" value={report.report_date} />
+            <InfoRow label="Report Date" value={toDisplayDate(report.report_date)} />
             <InfoRow label="FOB Number" value={report.fob} />
             <InfoRow label="Hours Run" value={String(report.hours_run)} />
             <InfoRow label="Hours Until Next" value={String(report.hours_until_next)} />
-            <InfoRow label="Next Service Date" value={report.next_service_date} />
+            <InfoRow label="Next Service Date" value={toDisplayDate(report.next_service_date)} />
           </div>
 
           <div>
@@ -189,7 +190,7 @@ export function ReportView() {
           )}
 
           <div className="border-t border-gray-100 pt-4 text-xs text-gray-400">
-            Filed by: {userName ?? userPhone ?? 'Unknown'} on {report.report_date}
+            Filed by: {userName ?? userPhone ?? 'Unknown'} on {toDisplayDate(report.report_date)}
           </div>
         </div>
       </div>

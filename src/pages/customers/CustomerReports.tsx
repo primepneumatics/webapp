@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import { useReactToPrint } from 'react-to-print'
 import { supabase } from '../../lib/supabase'
+import { toDisplayDate } from '../../utils/dateEngine'
 import { Layout } from '../../components/Layout'
 
 type Report = {
@@ -108,7 +109,7 @@ export function CustomerReports() {
             </h1>
             {(from || to) && (
               <p className="text-sm text-gray-600 mt-1">
-                Period: {from || '—'} to {to || '—'}
+                Period: {from ? toDisplayDate(from) : '—'} to {to ? toDisplayDate(to) : '—'}
               </p>
             )}
           </div>
@@ -135,11 +136,11 @@ export function CustomerReports() {
                 <tbody>
                   {reports.map(r => (
                     <tr key={r.id} className="border-b border-gray-50 hover:bg-gray-50">
-                      <td className="px-4 py-3 text-gray-900">{r.report_date}</td>
+                      <td className="px-4 py-3 text-gray-900">{toDisplayDate(r.report_date)}</td>
                       <td className="px-4 py-3 text-gray-600">{r.fob || '—'}</td>
                       <td className="px-4 py-3 text-gray-600">{r.hours_run}</td>
                       <td className="px-4 py-3 text-gray-600">₹{r.spares_cost?.toFixed(2) ?? '0.00'}</td>
-                      <td className="px-4 py-3 text-gray-600">{r.next_service_date}</td>
+                      <td className="px-4 py-3 text-gray-600">{toDisplayDate(r.next_service_date)}</td>
                       <td className="px-4 py-3 no-print">
                         <Link
                           to={`/reports/${r.id}`}

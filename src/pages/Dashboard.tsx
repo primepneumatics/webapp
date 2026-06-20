@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Layout } from '../components/Layout'
-import { toISODate, startOfWeek, endOfWeek, today } from '../utils/dateEngine'
+import { toISODate, toDisplayDate, startOfWeek, endOfWeek, today } from '../utils/dateEngine'
 import { getReminderTemplate, buildReminderMessage, buildReminderLink } from '../utils/reminderTemplate'
 
 type DueService = {
@@ -46,7 +46,7 @@ export function Dashboard() {
       <div className="mb-4">
         <h2 className="text-lg font-semibold text-gray-900">Services Due</h2>
         <p className="text-xs text-gray-500 mt-0.5">
-          {toISODate(startOfWeek())} &mdash; {toISODate(endOfWeek())}
+          {toDisplayDate(toISODate(startOfWeek()))} &mdash; {toDisplayDate(toISODate(endOfWeek()))}
         </p>
       </div>
 
@@ -63,7 +63,7 @@ export function Dashboard() {
             const message = buildReminderMessage(template, {
               name: s.customer.name,
               model: s.customer.model || 'machine',
-              date: s.next_service_date,
+              date: toDisplayDate(s.next_service_date),
             })
             const reminderLink = buildReminderLink(s.customer.phone, message)
 
@@ -82,7 +82,7 @@ export function Dashboard() {
                   )}
                 </div>
                 <p className="text-xs text-gray-500">{s.customer.model || '—'}</p>
-                <p className="text-xs text-gray-400 mt-0.5 mb-3">Due: {s.next_service_date}</p>
+                <p className="text-xs text-gray-400 mt-0.5 mb-3">Due: {toDisplayDate(s.next_service_date)}</p>
 
                 <div className="flex gap-2">
                   <a
