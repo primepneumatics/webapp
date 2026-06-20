@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Layout } from '../components/Layout'
 import { toISODate, startOfWeek, endOfWeek, today } from '../utils/dateEngine'
+import { getReminderTemplate, buildReminderMessage, buildReminderLink } from '../utils/reminderTemplate'
 
 type DueService = {
   id: string
@@ -38,76 +39,76 @@ export function Dashboard() {
   }, [])
 
   const todayStr = today()
+  const template = getReminderTemplate()
 
   return (
     <Layout>
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold text-gray-900">Services Due This Week</h2>
-        <p className="text-sm text-gray-500 mt-1">
-          Week of {toISODate(startOfWeek())} — {toISODate(endOfWeek())}
+      <div className="mb-4">
+        <h2 className="text-lg font-semibold text-gray-900">Services Due</h2>
+        <p className="text-xs text-gray-500 mt-0.5">
+          {toISODate(startOfWeek())} &mdash; {toISODate(endOfWeek())}
         </p>
       </div>
 
       {loading ? (
         <p className="text-gray-400 text-sm">Loading...</p>
       ) : services.length === 0 ? (
-        <div className="bg-white border border-gray-200 rounded-xl p-12 text-center">
+        <div className="bg-white border border-gray-200 rounded-xl p-10 text-center">
           <p className="text-gray-500 text-sm">No services due this week.</p>
         </div>
       ) : (
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-100 text-left">
-                <th className="px-4 py-3 font-medium text-gray-600">Customer</th>
-                <th className="px-4 py-3 font-medium text-gray-600">Phone</th>
-                <th className="px-4 py-3 font-medium text-gray-600">Model</th>
-                <th className="px-4 py-3 font-medium text-gray-600">Due Date</th>
-                <th className="px-4 py-3 font-medium text-gray-600">Status</th>
-                <th className="px-4 py-3 font-medium text-gray-600">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {services.map(s => {
-                const isPastDue = s.next_service_date < todayStr
-                return (
-                  <tr key={s.id} className="border-b border-gray-50 hover:bg-gray-50">
-                    <td className="px-4 py-3 font-medium text-gray-900">{s.customer.name}</td>
-                    <td className="px-4 py-3 text-gray-600">{s.customer.phone}</td>
-                    <td className="px-4 py-3 text-gray-600">{s.customer.model || '—'}</td>
-                    <td className="px-4 py-3 text-gray-600">{s.next_service_date}</td>
-                    <td className="px-4 py-3">
-                      {isPastDue ? (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">
-                          Past Due
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">
-                          Due
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <a
-                          href={`tel:${s.customer.phone}`}
-                          className="px-2.5 py-1 bg-green-50 text-green-700 rounded-md text-xs font-medium hover:bg-green-100"
-                        >
-                          Call
-                        </a>
-                        <Link
-                          to={`/customers/${s.customer.id}`}
-                          className="px-2.5 py-1 bg-blue-50 text-blue-700 rounded-md text-xs font-medium hover:bg-blue-100"
-                        >
-                          View
-                        </Link>
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+        <div className="space-y-3">
+          {services.map(s => {
+            const isPastDue = s.next_service_date < todayStr
+            const message = buildReminderMessage(template, {
+              name: s.customer.name,
+              model: s.customer.model || 'machine',
+              date: s.next_service_date,
+            })
+            const reminderLink = buildReminderLink(s.customer.phone, message)
+
+            return (
+              <div key={s.id} className="bg-white border border-gray-200 rounded-xl p-4">
+                <div className="flex items-start justify-between mb-1">
+                  <p className="font-semibold text-gray-900 text-sm">{s.customer.name}</p>
+                  {isPastDue ? (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 shrink-0 ml-2">
+                      Past Due
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 shrink-0 ml-2">
+                      Due
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-gray-500">{s.customer.model || '—'}</p>
+                <p className="text-xs text-gray-400 mt-0.5 mb-3">Due: {s.next_service_date}</p>
+
+                <div className="flex gap-2">
+                  <a
+                    href={`tel:${s.customer.phone}`}
+                    className="flex-1 py-2 bg-green-50 text-green-700 rounded-lg text-xs font-semibold text-center"
+                  >
+                    Call
+                  </a>
+                  <Link
+                    to={`/customers/${s.customer.id}`}
+                    className="flex-1 py-2 bg-blue-50 text-blue-700 rounded-lg text-xs font-semibold text-center"
+                  >
+                    View
+                  </Link>
+                  <a
+                    href={reminderLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex-1 py-2 bg-amber-50 text-amber-700 rounded-lg text-xs font-semibold text-center"
+                  >
+                    Remind
+                  </a>
+                </div>
+              </div>
+            )
+          })}
         </div>
       )}
     </Layout>
