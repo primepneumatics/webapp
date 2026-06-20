@@ -29,51 +29,43 @@ export function CustomerList() {
 
   return (
     <Layout>
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold text-gray-900">Customers</h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold text-gray-900">Customers</h2>
         <Link
           to="/customers/new"
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+          className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium"
         >
-          + Add Customer
+          + Add
         </Link>
       </div>
 
       {loading ? (
         <p className="text-gray-400 text-sm">Loading...</p>
       ) : customers.length === 0 ? (
-        <div className="bg-white border border-gray-200 rounded-xl p-12 text-center">
+        <div className="bg-white border border-gray-200 rounded-xl p-10 text-center">
           <p className="text-gray-500 text-sm">No customers yet.</p>
-          <Link to="/customers/new" className="text-blue-600 text-sm mt-2 inline-block hover:underline">
-            Add your first customer →
+          <Link to="/customers/new" className="text-blue-600 text-sm mt-2 inline-block">
+            Add your first customer &rarr;
           </Link>
         </div>
       ) : (
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-100 text-left">
-                <th className="px-4 py-3 font-medium text-gray-600">Name</th>
-                <th className="px-4 py-3 font-medium text-gray-600">Organisation</th>
-                <th className="px-4 py-3 font-medium text-gray-600">Phone</th>
-                <th className="px-4 py-3 font-medium text-gray-600">Model</th>
-              </tr>
-            </thead>
-            <tbody>
-              {customers.map(c => (
-                <tr
-                  key={c.id}
-                  className="border-b border-gray-50 hover:bg-gray-50 cursor-pointer"
-                  onClick={() => navigate(`/customers/${c.id}`)}
-                >
-                  <td className="px-4 py-3 font-medium text-gray-900">{c.name}</td>
-                  <td className="px-4 py-3 text-gray-600">{c.org || '—'}</td>
-                  <td className="px-4 py-3 text-gray-600">{c.phone}</td>
-                  <td className="px-4 py-3 text-gray-600">{c.model || '—'}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+        <div className="space-y-2">
+          {customers.map(c => (
+            <div
+              key={c.id}
+              className="bg-white border border-gray-200 rounded-xl p-4 flex items-center justify-between active:bg-gray-50 cursor-pointer"
+              onClick={() => navigate(`/customers/${c.id}`)}
+            >
+              <div className="min-w-0">
+                <p className="font-semibold text-gray-900 text-sm truncate">{c.name}</p>
+                {c.org && <p className="text-xs text-gray-500 truncate">{c.org}</p>}
+                <p className="text-xs text-gray-400 mt-0.5">
+                  {c.phone}{c.model ? ` · ${c.model}` : ''}
+                </p>
+              </div>
+              <span className="text-gray-300 text-xl ml-3 shrink-0">&#8250;</span>
+            </div>
+          ))}
         </div>
       )}
     </Layout>

@@ -14,6 +14,7 @@ import { SparePartsList } from './pages/admin/SparePartsList'
 import { ServiceTypesList } from './pages/admin/ServiceTypesList'
 import { AdminSettings } from './pages/admin/AdminSettings'
 import { Profile } from './pages/Profile'
+import { More } from './pages/More'
 
 export default function App() {
   return (
@@ -35,6 +36,7 @@ export default function App() {
         <Route path="/admin/service-types" element={<ProtectedRoute><ServiceTypesList /></ProtectedRoute>} />
         <Route path="/admin/settings" element={<ProtectedRoute><AdminSettings /></ProtectedRoute>} />
         <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+        <Route path="/more" element={<ProtectedRoute><More /></ProtectedRoute>} />
       </Routes>
     </BrowserRouter>
   )
