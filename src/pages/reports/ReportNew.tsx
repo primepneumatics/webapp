@@ -35,6 +35,7 @@ export function ReportNew() {
   const [spareId, setSpareId] = useState('')
   const [spareQty, setSpareQty] = useState('1')
   const [serviceId, setServiceId] = useState('')
+  const [adjustedTotalStr, setAdjustedTotalStr] = useState('')
 
   const [form, setForm] = useState({
     report_date: today(),
@@ -94,7 +95,13 @@ export function ReportNew() {
 
   const sparesTotal = selectedSpares.reduce((sum, s) => sum + s.amount, 0)
   const servicesTotal = selectedServices.reduce((sum, s) => sum + s.price, 0)
-  const grandTotal = sparesTotal + servicesTotal
+  const autoTotal = sparesTotal + servicesTotal
+  const parsedAdjusted = parseFloat(adjustedTotalStr)
+  const finalTotal =
+    adjustedTotalStr !== '' && !isNaN(parsedAdjusted) && parsedAdjusted < autoTotal
+      ? Math.max(0, parsedAdjusted)
+      : autoTotal
+  const discount = autoTotal - finalTotal
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -117,8 +124,8 @@ export function ReportNew() {
         hours_until_next: hoursUntilNext,
         selected_spares: selectedSpares,
         selected_services: selectedServices,
-        total_amount: grandTotal,
-        spares_cost: grandTotal,
+        total_amount: finalTotal,
+        spares_cost: autoTotal,
         next_service_date: toISODate(nextServiceDate),
       })
       .select('id')
@@ -311,9 +318,35 @@ export function ReportNew() {
               <span>Services Total</span>
               <span>₹{servicesTotal.toFixed(2)}</span>
             </div>
-            <div className="flex justify-between text-sm font-semibold text-gray-900 border-t border-gray-100 pt-2 mt-2">
+            <div className="flex justify-between text-sm text-gray-600 border-t border-gray-100 pt-2">
+              <span>Sub Total</span>
+              <span>₹{autoTotal.toFixed(2)}</span>
+            </div>
+
+            <div className="pt-1">
+              <label className="block text-xs text-gray-500 mb-1">Adjusted Grand Total (optional discount)</label>
+              <input
+                type="number"
+                min="0"
+                max={autoTotal}
+                step="0.01"
+                value={adjustedTotalStr}
+                onChange={e => setAdjustedTotalStr(e.target.value)}
+                placeholder={`₹${autoTotal.toFixed(2)}`}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+
+            {discount > 0 && (
+              <div className="flex justify-between text-sm text-green-600">
+                <span>Discount</span>
+                <span>- ₹{discount.toFixed(2)}</span>
+              </div>
+            )}
+
+            <div className="flex justify-between text-sm font-semibold text-gray-900 border-t border-gray-100 pt-2">
               <span>Grand Total</span>
-              <span>₹{grandTotal.toFixed(2)}</span>
+              <span>₹{finalTotal.toFixed(2)}</span>
             </div>
           </div>
 
