@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Layout } from '../components/Layout'
 import { toISODate, toDisplayDate, startOfWeek, endOfWeek, today } from '../utils/dateEngine'
-import { getReminderTemplate, buildReminderMessage, buildReminderLink } from '../utils/reminderTemplate'
+import { DEFAULT_REMINDER_TEMPLATE, buildReminderMessage, buildReminderLink } from '../utils/reminderTemplate'
 import { normalizePhone } from '../utils/whatsapp'
 
 type DueService = {
@@ -20,29 +20,35 @@ type DueService = {
 export function Dashboard() {
   const [services, setServices] = useState<DueService[]>([])
   const [loading, setLoading] = useState(true)
+  const [template, setTemplate] = useState(DEFAULT_REMINDER_TEMPLATE)
 
   useEffect(() => {
     async function load() {
       const weekStart = toISODate(startOfWeek())
       const weekEnd = toISODate(endOfWeek())
 
-      const { data, error } = await supabase
-        .from('service_reports')
-        .select('id, next_service_date, customer:customers(id, name, phone, model)')
-        .gte('next_service_date', weekStart)
-        .lte('next_service_date', weekEnd)
-        .order('next_service_date', { ascending: true })
+      const [{ data, error }, { data: settingData }] = await Promise.all([
+        supabase
+          .from('service_reports')
+          .select('id, next_service_date, customer:customers(id, name, phone, model)')
+          .gte('next_service_date', weekStart)
+          .lte('next_service_date', weekEnd)
+          .order('next_service_date', { ascending: true }),
+        supabase
+          .from('settings')
+          .select('value')
+          .eq('key', 'reminder_template')
+          .maybeSingle(),
+      ])
 
-      if (!error && data) {
-        setServices(data as unknown as DueService[])
-      }
+      if (!error && data) setServices(data as unknown as DueService[])
+      if (settingData) setTemplate(settingData.value)
       setLoading(false)
     }
     load()
   }, [])
 
   const todayStr = today()
-  const template = getReminderTemplate()
 
   return (
     <Layout>
