@@ -20,9 +20,13 @@ export function generatePassword(): string {
   return Array.from({ length: 8 }, () => CHARS[Math.floor(Math.random() * CHARS.length)]).join('')
 }
 
+export function displayPhone(phone: string): string {
+  return phone.startsWith('91') && phone.length === 12 ? phone.slice(2) : phone
+}
+
 export function buildInviteLink(phone: string, password: string): string {
   const text = encodeURIComponent(
-    `Your Prime Pneumatics login:\nPhone: ${phone}\nPassword: ${password}`
+    `Your Prime Pneumatics login:\nPhone: ${displayPhone(phone)}\nPassword: ${password}`
   )
   return `https://wa.me/${phone}?text=${text}`
 }
