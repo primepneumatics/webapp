@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { Layout } from '../components/Layout'
 import { toISODate, toDisplayDate, startOfWeek, endOfWeek, today } from '../utils/dateEngine'
 import { getReminderTemplate, buildReminderMessage, buildReminderLink } from '../utils/reminderTemplate'
+import { normalizePhone } from '../utils/whatsapp'
 
 type DueService = {
   id: string
@@ -22,11 +23,13 @@ export function Dashboard() {
 
   useEffect(() => {
     async function load() {
+      const weekStart = toISODate(startOfWeek())
       const weekEnd = toISODate(endOfWeek())
 
       const { data, error } = await supabase
         .from('service_reports')
         .select('id, next_service_date, customer:customers(id, name, phone, model)')
+        .gte('next_service_date', weekStart)
         .lte('next_service_date', weekEnd)
         .order('next_service_date', { ascending: true })
 
@@ -65,7 +68,7 @@ export function Dashboard() {
               model: s.customer.model || 'machine',
               date: toDisplayDate(s.next_service_date),
             })
-            const reminderLink = buildReminderLink(s.customer.phone, message)
+            const reminderLink = buildReminderLink(normalizePhone(s.customer.phone), message)
 
             return (
               <div key={s.id} className="bg-white border border-gray-200 rounded-xl p-4">
