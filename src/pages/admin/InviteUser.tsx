@@ -21,6 +21,7 @@ export function InviteUser() {
   const [error, setError] = useState('')
   const [users, setUsers] = useState<Profile[]>([])
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [resettingId, setResettingId] = useState<string | null>(null)
 
   useEffect(() => {
     supabase
@@ -89,6 +90,19 @@ export function InviteUser() {
     setPhone('')
     window.open(buildInviteLink(normalizedPhone, password), '_blank')
     setSaving(false)
+  }
+
+  async function handleResetPassword(user: Profile) {
+    if (!window.confirm(`Reset password for ${user.phone}? A new password will be generated and WhatsApp will open.`)) return
+    setResettingId(user.id)
+    const password = generatePassword()
+    const { error } = await supabaseAdmin.auth.admin.updateUserById(user.id, { password })
+    if (error) {
+      alert('Failed to reset password. Please try again.')
+    } else {
+      window.open(buildInviteLink(user.phone, password), '_blank')
+    }
+    setResettingId(null)
   }
 
   async function handleDelete(user: Profile) {
@@ -169,15 +183,24 @@ export function InviteUser() {
                       Added {new Date(u.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </p>
                   </div>
-                  {u.id !== session?.user.id && (
+                  <div className="flex gap-3 shrink-0">
                     <button
-                      onClick={() => handleDelete(u)}
-                      disabled={deletingId === u.id}
-                      className="text-xs text-red-500 hover:underline disabled:opacity-50 shrink-0"
+                      onClick={() => handleResetPassword(u)}
+                      disabled={resettingId === u.id}
+                      className="text-xs text-blue-600 hover:underline disabled:opacity-50"
                     >
-                      {deletingId === u.id ? 'Deleting...' : 'Delete'}
+                      {resettingId === u.id ? 'Resetting...' : 'Reset Password'}
                     </button>
-                  )}
+                    {u.id !== session?.user.id && (
+                      <button
+                        onClick={() => handleDelete(u)}
+                        disabled={deletingId === u.id}
+                        className="text-xs text-red-500 hover:underline disabled:opacity-50"
+                      >
+                        {deletingId === u.id ? 'Deleting...' : 'Delete'}
+                      </button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
