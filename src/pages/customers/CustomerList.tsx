@@ -15,6 +15,7 @@ export function CustomerList() {
   const navigate = useNavigate()
   const [customers, setCustomers] = useState<Customer[]>([])
   const [loading, setLoading] = useState(true)
+  const [search, setSearch] = useState('')
 
   useEffect(() => {
     supabase
@@ -26,6 +27,18 @@ export function CustomerList() {
         setLoading(false)
       })
   }, [])
+
+  const filtered = search.trim()
+    ? customers.filter(c => {
+        const q = search.toLowerCase()
+        return (
+          c.name?.toLowerCase().includes(q) ||
+          c.org?.toLowerCase().includes(q) ||
+          c.phone?.includes(q) ||
+          c.model?.toLowerCase().includes(q)
+        )
+      })
+    : customers
 
   return (
     <Layout>
@@ -39,6 +52,14 @@ export function CustomerList() {
         </Link>
       </div>
 
+      <input
+        type="search"
+        value={search}
+        onChange={e => setSearch(e.target.value)}
+        placeholder="Search by name, org, phone or model..."
+        className="w-full mb-4 border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+
       {loading ? (
         <p className="text-gray-400 text-sm">Loading...</p>
       ) : customers.length === 0 ? (
@@ -48,9 +69,13 @@ export function CustomerList() {
             Add your first customer &rarr;
           </Link>
         </div>
+      ) : filtered.length === 0 ? (
+        <div className="bg-white border border-gray-200 rounded-xl p-10 text-center">
+          <p className="text-gray-500 text-sm">No customers match "{search}".</p>
+        </div>
       ) : (
         <div className="space-y-2">
-          {customers.map(c => (
+          {filtered.map(c => (
             <div
               key={c.id}
               className="bg-white border border-gray-200 rounded-xl p-4 flex items-center justify-between active:bg-gray-50 cursor-pointer"

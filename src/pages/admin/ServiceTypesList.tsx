@@ -82,7 +82,7 @@ export function ServiceTypesList() {
 
         <form onSubmit={handleAdd} className="bg-white border border-gray-200 rounded-xl p-4 mb-6">
           <p className="text-sm font-medium text-gray-700 mb-3">Add New Service Type</p>
-          <div className="grid grid-cols-3 gap-3 mb-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
             <div>
               <label className="block text-xs text-gray-500 mb-1">Code *</label>
               <input value={form.code} onChange={set(form, setForm)('code')} required placeholder="e.g. SV001"
@@ -111,52 +111,42 @@ export function ServiceTypesList() {
             <p className="text-sm text-gray-400">No service types added yet.</p>
           </div>
         ) : (
-          <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-100 text-left">
-                  <th className="px-4 py-3 font-medium text-gray-600">Code</th>
-                  <th className="px-4 py-3 font-medium text-gray-600">Name</th>
-                  <th className="px-4 py-3 font-medium text-gray-600">Price</th>
-                  <th className="px-4 py-3 font-medium text-gray-600"></th>
-                </tr>
-              </thead>
-              <tbody>
-                {services.map(s => (
-                  <tr key={s.id} className="border-b border-gray-50">
-                    {editId === s.id ? (
-                      <>
-                        <td className="px-4 py-2"><input value={editForm.code} onChange={set(editForm, setEditForm)('code')}
-                          className="w-full border border-gray-300 rounded px-2 py-1 text-sm" /></td>
-                        <td className="px-4 py-2"><input value={editForm.name} onChange={set(editForm, setEditForm)('name')}
-                          className="w-full border border-gray-300 rounded px-2 py-1 text-sm" /></td>
-                        <td className="px-4 py-2"><input type="number" value={editForm.price} onChange={set(editForm, setEditForm)('price')}
-                          className="w-full border border-gray-300 rounded px-2 py-1 text-sm" /></td>
-                        <td className="px-4 py-2">
-                          <div className="flex gap-2">
-                            <button onClick={() => handleEdit(s.id)} className="text-xs text-green-600 hover:underline">Save</button>
-                            <button onClick={() => setEditId(null)} className="text-xs text-gray-400 hover:underline">Cancel</button>
-                          </div>
-                        </td>
-                      </>
-                    ) : (
-                      <>
-                        <td className="px-4 py-3 font-mono text-gray-700">{s.code}</td>
-                        <td className="px-4 py-3 text-gray-900">{s.name}</td>
-                        <td className="px-4 py-3 text-gray-600">₹{s.price.toFixed(2)}</td>
-                        <td className="px-4 py-3">
-                          <div className="flex gap-3">
-                            <button onClick={() => { setEditId(s.id); setEditForm({ code: s.code, name: s.name, price: String(s.price) }) }}
-                              className="text-xs text-blue-600 hover:underline">Edit</button>
-                            <button onClick={() => handleDelete(s.id)} className="text-xs text-red-500 hover:underline">Delete</button>
-                          </div>
-                        </td>
-                      </>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="space-y-2">
+            {services.map(s => (
+              <div key={s.id} className="bg-white border border-gray-200 rounded-xl p-4">
+                {editId === s.id ? (
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      <input value={editForm.code} onChange={set(editForm, setEditForm)('code')} placeholder="Code"
+                        className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                      <input type="number" value={editForm.price} onChange={set(editForm, setEditForm)('price')} placeholder="Price"
+                        className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                    <input value={editForm.name} onChange={set(editForm, setEditForm)('name')} placeholder="Name"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    <div className="flex gap-2 pt-1">
+                      <button onClick={() => handleEdit(s.id)} className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-medium">Save</button>
+                      <button onClick={() => setEditId(null)} className="px-3 py-1.5 border border-gray-200 text-gray-500 rounded-lg text-xs">Cancel</button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="font-mono text-xs text-gray-400">{s.code}</span>
+                        <span className="text-sm font-medium text-gray-900 truncate">{s.name}</span>
+                      </div>
+                      <span className="text-sm text-gray-600">₹{s.price.toFixed(2)}</span>
+                    </div>
+                    <div className="flex gap-3 shrink-0">
+                      <button onClick={() => { setEditId(s.id); setEditForm({ code: s.code, name: s.name, price: String(s.price) }) }}
+                        className="text-xs text-blue-600 hover:underline">Edit</button>
+                      <button onClick={() => handleDelete(s.id)} className="text-xs text-red-500 hover:underline">Delete</button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         )}
       </div>
