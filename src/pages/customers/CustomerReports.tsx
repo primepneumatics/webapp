@@ -73,7 +73,7 @@ export function CustomerReports() {
           </button>
         </div>
 
-        <div className="flex items-end gap-3 mb-4 no-print">
+        <div className="flex flex-wrap items-end gap-3 mb-4 no-print">
           <div>
             <label className="block text-xs text-gray-500 mb-1">From</label>
             <input
@@ -121,39 +121,69 @@ export function CustomerReports() {
               <p className="text-gray-500 text-sm">No reports found for this period.</p>
             </div>
           ) : (
-            <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-100 text-left">
-                    <th className="px-4 py-3 font-medium text-gray-600">Report Date</th>
-                    <th className="px-4 py-3 font-medium text-gray-600">FOB</th>
-                    <th className="px-4 py-3 font-medium text-gray-600">Hours Run</th>
-                    <th className="px-4 py-3 font-medium text-gray-600">Spares Cost</th>
-                    <th className="px-4 py-3 font-medium text-gray-600">Next Service</th>
-                    <th className="px-4 py-3 font-medium text-gray-600 no-print">View</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {reports.map(r => (
-                    <tr key={r.id} className="border-b border-gray-50 hover:bg-gray-50">
-                      <td className="px-4 py-3 text-gray-900">{toDisplayDate(r.report_date)}</td>
-                      <td className="px-4 py-3 text-gray-600">{r.fob || '—'}</td>
-                      <td className="px-4 py-3 text-gray-600">{r.hours_run}</td>
-                      <td className="px-4 py-3 text-gray-600">₹{r.spares_cost?.toFixed(2) ?? '0.00'}</td>
-                      <td className="px-4 py-3 text-gray-600">{toDisplayDate(r.next_service_date)}</td>
-                      <td className="px-4 py-3 no-print">
-                        <Link
-                          to={`/reports/${r.id}`}
-                          className="text-blue-600 hover:underline text-xs"
-                        >
-                          View →
-                        </Link>
-                      </td>
+            <>
+              {/* Mobile cards */}
+              <div className="space-y-3 sm:hidden no-print">
+                {reports.map(r => (
+                  <div key={r.id} className="bg-white border border-gray-200 rounded-xl p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-sm font-semibold text-gray-900">{toDisplayDate(r.report_date)}</span>
+                      <Link
+                        to={`/reports/${r.id}`}
+                        className="text-xs text-blue-600 font-medium hover:underline"
+                      >
+                        View →
+                      </Link>
+                    </div>
+                    <div className="grid grid-cols-2 gap-y-2 text-sm">
+                      <span className="text-gray-500">FOB</span>
+                      <span className="text-gray-900 text-right">{r.fob || '—'}</span>
+                      <span className="text-gray-500">Hours Run</span>
+                      <span className="text-gray-900 text-right">{r.hours_run}</span>
+                      <span className="text-gray-500">Spares Cost</span>
+                      <span className="text-gray-900 text-right">₹{r.spares_cost?.toFixed(2) ?? '0.00'}</span>
+                      <span className="text-gray-500">Next Service</span>
+                      <span className="text-gray-900 text-right">{toDisplayDate(r.next_service_date)}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop table + print */}
+              <div className="hidden sm:block bg-white border border-gray-200 rounded-xl overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-100 text-left">
+                      <th className="px-4 py-3 font-medium text-gray-600">Report Date</th>
+                      <th className="px-4 py-3 font-medium text-gray-600">FOB</th>
+                      <th className="px-4 py-3 font-medium text-gray-600">Hours Run</th>
+                      <th className="px-4 py-3 font-medium text-gray-600">Spares Cost</th>
+                      <th className="px-4 py-3 font-medium text-gray-600">Next Service</th>
+                      <th className="px-4 py-3 font-medium text-gray-600 no-print">View</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {reports.map(r => (
+                      <tr key={r.id} className="border-b border-gray-50 hover:bg-gray-50">
+                        <td className="px-4 py-3 text-gray-900">{toDisplayDate(r.report_date)}</td>
+                        <td className="px-4 py-3 text-gray-600">{r.fob || '—'}</td>
+                        <td className="px-4 py-3 text-gray-600">{r.hours_run}</td>
+                        <td className="px-4 py-3 text-gray-600">₹{r.spares_cost?.toFixed(2) ?? '0.00'}</td>
+                        <td className="px-4 py-3 text-gray-600">{toDisplayDate(r.next_service_date)}</td>
+                        <td className="px-4 py-3 no-print">
+                          <Link
+                            to={`/reports/${r.id}`}
+                            className="text-blue-600 hover:underline text-xs"
+                          >
+                            View →
+                          </Link>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </div>
       </div>
