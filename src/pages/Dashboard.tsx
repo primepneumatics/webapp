@@ -149,7 +149,7 @@ export function Dashboard() {
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-gray-500">{s.customer.model || '—'}</p>
+                {s.customer.model && <p className="text-xs text-gray-500">{s.customer.model}</p>}
                 <div className="flex flex-wrap gap-x-3 text-xs text-gray-400 mt-0.5 mb-3">
                   <span>Due: {toDisplayDate(s.next_service_date)}</span>
                   <span>Serviced: {toDisplayDate(s.report_date)}</span>
