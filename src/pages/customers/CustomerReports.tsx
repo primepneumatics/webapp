@@ -11,6 +11,7 @@ type Report = {
   fob: string
   hours_run: number
   spares_cost: number
+  total_amount: number
   next_service_date: string
 }
 
@@ -39,7 +40,7 @@ export function CustomerReports() {
     setLoading(true)
     let query = supabase
       .from('service_reports')
-      .select('id, report_date, fob, hours_run, spares_cost, next_service_date')
+      .select('id, report_date, fob, hours_run, spares_cost, total_amount, next_service_date')
       .eq('customer_id', id)
       .order('report_date', { ascending: false })
 
@@ -140,8 +141,10 @@ export function CustomerReports() {
                       <span className="text-gray-900 text-right">{r.fob || '—'}</span>
                       <span className="text-gray-500">Hours Run</span>
                       <span className="text-gray-900 text-right">{r.hours_run}</span>
-                      <span className="text-gray-500">Spares Cost</span>
+                      <span className="text-gray-500">Subtotal</span>
                       <span className="text-gray-900 text-right">₹{r.spares_cost?.toFixed(2) ?? '0.00'}</span>
+                      <span className="text-gray-500">Grand Total</span>
+                      <span className="text-gray-900 text-right font-medium">₹{r.total_amount?.toFixed(2) ?? r.spares_cost?.toFixed(2) ?? '0.00'}</span>
                       <span className="text-gray-500">Next Service</span>
                       <span className="text-gray-900 text-right">{toDisplayDate(r.next_service_date)}</span>
                     </div>
@@ -157,7 +160,8 @@ export function CustomerReports() {
                       <th className="px-4 py-3 font-medium text-gray-600">Report Date</th>
                       <th className="px-4 py-3 font-medium text-gray-600">FOB</th>
                       <th className="px-4 py-3 font-medium text-gray-600">Hours Run</th>
-                      <th className="px-4 py-3 font-medium text-gray-600">Spares Cost</th>
+                      <th className="px-4 py-3 font-medium text-gray-600">Subtotal</th>
+                      <th className="px-4 py-3 font-medium text-gray-600">Grand Total</th>
                       <th className="px-4 py-3 font-medium text-gray-600">Next Service</th>
                       <th className="px-4 py-3 font-medium text-gray-600 no-print">View</th>
                     </tr>
@@ -169,6 +173,7 @@ export function CustomerReports() {
                         <td className="px-4 py-3 text-gray-600">{r.fob || '—'}</td>
                         <td className="px-4 py-3 text-gray-600">{r.hours_run}</td>
                         <td className="px-4 py-3 text-gray-600">₹{r.spares_cost?.toFixed(2) ?? '0.00'}</td>
+                        <td className="px-4 py-3 text-gray-900 font-medium">₹{r.total_amount?.toFixed(2) ?? r.spares_cost?.toFixed(2) ?? '0.00'}</td>
                         <td className="px-4 py-3 text-gray-600">{toDisplayDate(r.next_service_date)}</td>
                         <td className="px-4 py-3 no-print">
                           <Link
