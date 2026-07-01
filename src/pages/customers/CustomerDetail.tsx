@@ -12,14 +12,17 @@ type Customer = {
   address: string
   phone: string
   model: string
-  spares: string
+  spare_part_ids: string[]
 }
+
+type SparePart = { id: string; code: string; name: string }
 
 export function CustomerDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { isAdmin } = useAuth()
   const [customer, setCustomer] = useState<Customer | null>(null)
+  const [spares, setSpares] = useState<SparePart[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -30,6 +33,17 @@ export function CustomerDetail() {
       .single()
       .then(({ data }) => {
         setCustomer(data)
+        const ids: string[] = data?.spare_part_ids ?? []
+        if (ids.length > 0) {
+          supabase
+            .from('spare_parts')
+            .select('id, code, name')
+            .in('id', ids)
+            .order('code')
+            .then(({ data: parts }) => {
+              if (parts) setSpares(parts)
+            })
+        }
         setLoading(false)
       })
   }, [id])
@@ -53,7 +67,20 @@ export function CustomerDetail() {
           <Row label="Address" value={customer.address} />
           <Row label="Phone" value={customer.phone} />
           <Row label="Model Number" value={customer.model} />
-          <Row label="Spares Required" value={customer.spares} />
+          <div className="flex gap-4">
+            <span className="text-sm text-gray-500 w-36 shrink-0">Spares Required</span>
+            {spares.length === 0 ? (
+              <span className="text-sm text-gray-900">—</span>
+            ) : (
+              <div className="flex flex-wrap gap-1.5">
+                {spares.map(p => (
+                  <span key={p.id} className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-xs">
+                    <span className="font-mono text-gray-400">{p.code}</span> {p.name}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="flex gap-3 mb-3">
