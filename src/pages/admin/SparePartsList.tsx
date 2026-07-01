@@ -66,7 +66,9 @@ export function SparePartsList() {
   }
 
   async function handleDelete(id: string) {
-    await supabase.from('spare_parts').delete().eq('id', id)
+    if (!window.confirm('Delete this spare part? This cannot be undone.')) return
+    const { error } = await supabase.from('spare_parts').delete().eq('id', id)
+    if (error) { setError(error.message); return }
     setParts(prev => prev.filter(p => p.id !== id))
   }
 

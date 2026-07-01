@@ -66,7 +66,9 @@ export function ServiceTypesList() {
   }
 
   async function handleDelete(id: string) {
-    await supabase.from('service_types').delete().eq('id', id)
+    if (!window.confirm('Delete this service type? This cannot be undone.')) return
+    const { error } = await supabase.from('service_types').delete().eq('id', id)
+    if (error) { setError(error.message); return }
     setServices(prev => prev.filter(s => s.id !== id))
   }
 
