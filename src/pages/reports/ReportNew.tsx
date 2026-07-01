@@ -214,21 +214,23 @@ export function ReportNew() {
           <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
             <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Spare Parts Used</h3>
 
-            <div className="flex gap-2">
+            <div className="space-y-2">
               <select value={spareId} onChange={e => setSpareId(e.target.value)}
-                className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <option value="">Select spare part...</option>
                 {spareParts.map(p => (
                   <option key={p.id} value={p.id}>{p.code} — {p.name} (₹{p.price_per_unit}/unit)</option>
                 ))}
               </select>
-              <input type="number" value={spareQty} onChange={e => setSpareQty(e.target.value)}
-                min="1" placeholder="Qty"
-                className="w-20 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-              <button type="button" onClick={addSpare} disabled={!spareId}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-40">
-                + Add
-              </button>
+              <div className="flex gap-2">
+                <input type="number" value={spareQty} onChange={e => setSpareQty(e.target.value)}
+                  min="1" placeholder="Qty"
+                  className="w-24 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <button type="button" onClick={addSpare} disabled={!spareId}
+                  className="flex-1 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-40">
+                  + Add
+                </button>
+              </div>
             </div>
 
             {selectedSpares.length > 0 && (

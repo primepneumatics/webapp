@@ -10,9 +10,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const moreActive = isActive('/more') || isActive('/admin') || isActive('/profile')
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-16">
+    <div className="min-h-[100dvh] bg-gray-50 pb-16" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10 no-print">
-        <div className="px-4 h-12 flex items-center">
+        <div className="px-4 h-12 flex items-center" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
           <span className="font-semibold text-gray-900 text-sm">Prime Pneumatics</span>
         </div>
       </header>
@@ -21,7 +21,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         {children}
       </main>
 
-      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-10 no-print">
+      <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-10 no-print" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         <div className="flex">
           <BottomTab to="/dashboard" label="Home" active={isActive('/dashboard')}>
             <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
