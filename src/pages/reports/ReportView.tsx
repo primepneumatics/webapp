@@ -1,6 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { useReactToPrint } from 'react-to-print'
 import { supabase } from '../../lib/supabase'
 import { toDisplayDate } from '../../utils/dateEngine'
 import { Layout } from '../../components/Layout'
@@ -40,9 +39,6 @@ export function ReportView() {
   const { phone: userPhone, name: userName } = useAuth()
   const [report, setReport] = useState<Report | null>(null)
   const [loading, setLoading] = useState(true)
-  const printRef = useRef<HTMLDivElement>(null)
-
-  const handlePrint = useReactToPrint({ contentRef: printRef })
 
   useEffect(() => {
     supabase
@@ -78,14 +74,14 @@ export function ReportView() {
               className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">
               Report History
             </button>
-            <button onClick={() => handlePrint()}
+            <button onClick={() => window.print()}
               className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors">
               Print
             </button>
           </div>
         </div>
 
-        <div ref={printRef} className="bg-white border border-gray-200 rounded-xl p-8 space-y-6">
+        <div className="bg-white border border-gray-200 rounded-xl p-8 space-y-6">
           <div className="border-b border-gray-100 pb-4">
             <h1 className="text-lg font-bold text-gray-900">Prime Pneumatics</h1>
             <p className="text-sm text-gray-500">Service Report</p>

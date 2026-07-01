@@ -1,6 +1,5 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
-import { useReactToPrint } from 'react-to-print'
 import { supabase } from '../../lib/supabase'
 import { toDisplayDate } from '../../utils/dateEngine'
 import { Layout } from '../../components/Layout'
@@ -23,12 +22,6 @@ export function CustomerReports() {
   const [loading, setLoading] = useState(true)
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
-  const printRef = useRef<HTMLDivElement>(null)
-
-  const handlePrint = useReactToPrint({
-    contentRef: printRef,
-    pageStyle: '@page { size: A4 landscape; margin: 1cm; }',
-  })
 
   useEffect(() => {
     supabase.from('customers').select('name').eq('id', id).single().then(({ data }) => {
@@ -67,7 +60,7 @@ export function CustomerReports() {
             </div>
           </div>
           <button
-            onClick={() => handlePrint()}
+            onClick={() => window.print()}
             className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors"
           >
             Print
@@ -103,7 +96,7 @@ export function CustomerReports() {
           )}
         </div>
 
-        <div ref={printRef}>
+        <div>
           <div className="hidden print:block mb-6">
             <h1 className="text-lg font-bold text-gray-900">
               Prime Pneumatics — Service History: {customerName}
