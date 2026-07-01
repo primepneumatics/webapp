@@ -15,11 +15,12 @@ type Profile = {
 
 export function InviteUser() {
   const navigate = useNavigate()
-  const { isAdmin, loading } = useAuth()
+  const { isAdmin, loading, session } = useAuth()
   const [phone, setPhone] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [users, setUsers] = useState<Profile[]>([])
+  const [deletingId, setDeletingId] = useState<string | null>(null)
 
   useEffect(() => {
     supabase
@@ -90,6 +91,19 @@ export function InviteUser() {
     setSaving(false)
   }
 
+  async function handleDelete(user: Profile) {
+    if (user.id === session?.user.id) {
+      alert('You cannot delete your own account.')
+      return
+    }
+    if (!window.confirm(`Delete user ${user.phone}? This will revoke their access immediately.`)) return
+    setDeletingId(user.id)
+    await supabase.from('profiles').delete().eq('id', user.id)
+    await supabaseAdmin.auth.admin.deleteUser(user.id)
+    setUsers(prev => prev.filter(u => u.id !== user.id))
+    setDeletingId(null)
+  }
+
   return (
     <Layout>
       <div className="max-w-2xl">
@@ -139,33 +153,33 @@ export function InviteUser() {
               <p className="text-sm text-gray-400">No users yet.</p>
             </div>
           ) : (
-            <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-100 text-left">
-                    <th className="px-4 py-3 font-medium text-gray-600">Phone</th>
-                    <th className="px-4 py-3 font-medium text-gray-600">Role</th>
-                    <th className="px-4 py-3 font-medium text-gray-600">Added</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {users.map(u => (
-                    <tr key={u.id} className="border-b border-gray-50">
-                      <td className="px-4 py-3 text-gray-900">{u.phone}</td>
-                      <td className="px-4 py-3">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                          u.role === 'admin' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'
-                        }`}>
-                          {u.role}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-gray-500">
-                        {new Date(u.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="space-y-2">
+              {users.map(u => (
+                <div key={u.id} className="bg-white border border-gray-200 rounded-xl p-4 flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="text-sm font-medium text-gray-900">{u.phone}</span>
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                        u.role === 'admin' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'
+                      }`}>
+                        {u.role}
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-400">
+                      Added {new Date(u.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </p>
+                  </div>
+                  {u.id !== session?.user.id && (
+                    <button
+                      onClick={() => handleDelete(u)}
+                      disabled={deletingId === u.id}
+                      className="text-xs text-red-500 hover:underline disabled:opacity-50 shrink-0"
+                    >
+                      {deletingId === u.id ? 'Deleting...' : 'Delete'}
+                    </button>
+                  )}
+                </div>
+              ))}
             </div>
           )}
         </div>
