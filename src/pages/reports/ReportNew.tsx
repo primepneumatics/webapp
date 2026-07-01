@@ -4,14 +4,6 @@ import { supabase } from '../../lib/supabase'
 import { Layout } from '../../components/Layout'
 import { calcNextServiceDate, toISODate, toDisplayDate, today } from '../../utils/dateEngine'
 
-const CHECKLIST_ITEMS = [
-  { key: 'air_filter', label: 'Replaced air filter' },
-  { key: 'oil_filter', label: 'Replaced oil filter' },
-  { key: 'oil_level', label: 'Checked / topped up oil level' },
-  { key: 'cooler', label: 'Cleaned cooler' },
-  { key: 'belts', label: 'Inspected belts / drive' },
-  { key: 'air_leaks', label: 'Checked for air leaks' },
-]
 
 type SparePart = { id: string; code: string; name: string; price_per_unit: number }
 type ServiceType = { id: string; code: string; name: string; price: number }
@@ -44,9 +36,7 @@ export function ReportNew() {
     hours_run: '',
     hours_until_next: '',
   })
-  const [checklist, setChecklist] = useState<Record<string, boolean>>(
-    Object.fromEntries(CHECKLIST_ITEMS.map(i => [i.key, false]))
-  )
+  const [checklist, setChecklist] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
     supabase.from('customers').select('name').eq('id', id).single().then(({ data }) => {
@@ -90,7 +80,17 @@ export function ReportNew() {
     if (!svc) return
     if (selectedServices.find(s => s.id === svc.id)) return
     setSelectedServices(prev => [...prev, { id: svc.id, code: svc.code, name: svc.name, price: svc.price }])
+    setChecklist(prev => ({ ...prev, [svc.name]: false }))
     setServiceId('')
+  }
+
+  function removeService(svc: SelectedService) {
+    setSelectedServices(prev => prev.filter(x => x.id !== svc.id))
+    setChecklist(prev => {
+      const next = { ...prev }
+      delete next[svc.name]
+      return next
+    })
   }
 
   const sparesTotal = selectedSpares.reduce((sum, s) => sum + s.amount, 0)
@@ -198,16 +198,20 @@ export function ReportNew() {
           {/* Checklist */}
           <div className="bg-white border border-gray-200 rounded-xl p-6">
             <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">Service Checklist</h3>
-            <div className="space-y-3">
-              {CHECKLIST_ITEMS.map(item => (
-                <label key={item.key} className="flex items-center gap-3 cursor-pointer">
-                  <input type="checkbox" checked={checklist[item.key]}
-                    onChange={() => setChecklist(c => ({ ...c, [item.key]: !c[item.key] }))}
-                    className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
-                  <span className="text-sm text-gray-700">{item.label}</span>
-                </label>
-              ))}
-            </div>
+            {Object.keys(checklist).length === 0 ? (
+              <p className="text-sm text-gray-400">Add services below to populate the checklist.</p>
+            ) : (
+              <div className="space-y-3">
+                {Object.entries(checklist).map(([key, done]) => (
+                  <label key={key} className="flex items-center gap-3 cursor-pointer">
+                    <input type="checkbox" checked={done}
+                      onChange={() => setChecklist(c => ({ ...c, [key]: !c[key] }))}
+                      className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                    <span className="text-sm text-gray-700">{key}</span>
+                  </label>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Spare Parts */}
@@ -299,7 +303,7 @@ export function ReportNew() {
                       <td className="py-2 text-gray-800">{s.name}</td>
                       <td className="py-2 text-right font-medium text-gray-900">₹{s.price.toFixed(2)}</td>
                       <td className="py-2 text-right">
-                        <button type="button" onClick={() => setSelectedServices(prev => prev.filter(x => x.id !== s.id))}
+                        <button type="button" onClick={() => removeService(s)}
                           className="text-red-400 hover:text-red-600 text-xs">×</button>
                       </td>
                     </tr>
