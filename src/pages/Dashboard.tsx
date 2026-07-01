@@ -9,6 +9,8 @@ import { normalizePhone } from '../utils/whatsapp'
 type DueService = {
   id: string
   next_service_date: string
+  report_date: string
+  fob: string
   customer: {
     id: string
     name: string
@@ -37,13 +39,13 @@ export function Dashboard() {
       const [{ data: weekData }, { data: pastData }, { data: settingData }] = await Promise.all([
         supabase
           .from('service_reports')
-          .select('id, next_service_date, customer:customers(id, name, phone, model)')
+          .select('id, next_service_date, report_date, fob, customer:customers(id, name, phone, model)')
           .gte('next_service_date', weekStart)
           .lte('next_service_date', weekEnd)
           .order('next_service_date', { ascending: true }),
         supabase
           .from('service_reports')
-          .select('id, next_service_date, customer:customers(id, name, phone, model)')
+          .select('id, next_service_date, report_date, fob, customer:customers(id, name, phone, model)')
           .gte('next_service_date', ninetyDaysAgoStr)
           .lt('next_service_date', weekStart)
           .order('next_service_date', { ascending: false }),
@@ -148,7 +150,11 @@ export function Dashboard() {
                   )}
                 </div>
                 <p className="text-xs text-gray-500">{s.customer.model || '—'}</p>
-                <p className="text-xs text-gray-400 mt-0.5 mb-3">Due: {toDisplayDate(s.next_service_date)}</p>
+                <div className="flex flex-wrap gap-x-3 text-xs text-gray-400 mt-0.5 mb-3">
+                  <span>Due: {toDisplayDate(s.next_service_date)}</span>
+                  <span>Serviced: {toDisplayDate(s.report_date)}</span>
+                  {s.fob && <span>FOB: {s.fob}</span>}
+                </div>
 
                 <div className="flex gap-2">
                   <a
