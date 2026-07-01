@@ -177,7 +177,17 @@ export function ReportView() {
                 <span>Services Total</span><span>₹{servicesTotal.toFixed(2)}</span>
               </div>
             )}
-            <div className="flex justify-between text-sm font-semibold text-gray-900 pt-1">
+            {grandTotal < sparesTotal + servicesTotal && (
+              <>
+                <div className="flex justify-between text-sm text-gray-500 border-t border-gray-100 pt-1">
+                  <span>Subtotal</span><span>₹{(sparesTotal + servicesTotal).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm text-green-600">
+                  <span>Discount</span><span>- ₹{(sparesTotal + servicesTotal - grandTotal).toFixed(2)}</span>
+                </div>
+              </>
+            )}
+            <div className="flex justify-between text-sm font-semibold text-gray-900 border-t border-gray-100 pt-1">
               <span>Grand Total</span><span>₹{grandTotal.toFixed(2)}</span>
             </div>
           </div>
