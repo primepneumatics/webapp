@@ -268,16 +268,16 @@ export function ReportNew() {
           <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
             <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Services Performed</h3>
 
-            <div className="flex gap-2">
+            <div className="space-y-2">
               <select value={serviceId} onChange={e => setServiceId(e.target.value)}
-                className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <option value="">Select service type...</option>
                 {serviceTypes.map(s => (
                   <option key={s.id} value={s.id}>{s.code} — {s.name} (₹{s.price})</option>
                 ))}
               </select>
               <button type="button" onClick={addService} disabled={!serviceId}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-40">
+                className="w-full py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-40">
                 + Add
               </button>
             </div>
