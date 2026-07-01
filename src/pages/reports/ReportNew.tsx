@@ -105,16 +105,11 @@ export function ReportNew() {
     const reportDate = new Date(form.report_date)
     const nextServiceDate = calcNextServiceDate(reportDate, hoursUntilNext)
 
-    const checklist = Object.fromEntries(
-      serviceTypes.map(s => [s.name, selectedServices.some(ss => ss.id === s.id)])
-    )
-
     const { data, error } = await supabase
       .from('service_reports')
       .insert({
         customer_id: id,
         report_date: form.report_date,
-        checklist,
         fob: form.fob,
         remarks: form.remarks,
         hours_run: parseFloat(form.hours_run),
@@ -190,27 +185,6 @@ export function ReportNew() {
               <textarea value={form.remarks} onChange={setField('remarks')} rows={3}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </div>
-          </div>
-
-          {/* Checklist */}
-          <div className="bg-white border border-gray-200 rounded-xl p-6">
-            <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">Service Checklist</h3>
-            {serviceTypes.length === 0 ? (
-              <p className="text-sm text-gray-400">No service types configured yet.</p>
-            ) : (
-              <div className="space-y-3">
-                {serviceTypes.map(svc => {
-                  const checked = selectedServices.some(s => s.id === svc.id)
-                  return (
-                    <div key={svc.id} className="flex items-center gap-3">
-                      <input type="checkbox" checked={checked} readOnly
-                        className="w-4 h-4 rounded border-gray-300 text-blue-600 pointer-events-none" />
-                      <span className={`text-sm ${checked ? 'text-gray-900' : 'text-gray-400'}`}>{svc.name}</span>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
           </div>
 
           {/* Spare Parts */}
