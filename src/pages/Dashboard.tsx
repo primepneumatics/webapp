@@ -17,8 +17,12 @@ type DueService = {
   }
 }
 
+type Tab = 'week' | 'pastdue'
+
 export function Dashboard() {
-  const [services, setServices] = useState<DueService[]>([])
+  const [tab, setTab] = useState<Tab>('week')
+  const [weekServices, setWeekServices] = useState<DueService[]>([])
+  const [pastServices, setPastServices] = useState<DueService[]>([])
   const [loading, setLoading] = useState(true)
   const [template, setTemplate] = useState(DEFAULT_REMINDER_TEMPLATE)
 
@@ -26,8 +30,11 @@ export function Dashboard() {
     async function load() {
       const weekStart = toISODate(startOfWeek())
       const weekEnd = toISODate(endOfWeek())
+      const ninetyDaysAgo = new Date()
+      ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90)
+      const ninetyDaysAgoStr = toISODate(ninetyDaysAgo)
 
-      const [{ data, error }, { data: settingData }] = await Promise.all([
+      const [{ data: weekData }, { data: pastData }, { data: settingData }] = await Promise.all([
         supabase
           .from('service_reports')
           .select('id, next_service_date, customer:customers(id, name, phone, model)')
@@ -35,13 +42,20 @@ export function Dashboard() {
           .lte('next_service_date', weekEnd)
           .order('next_service_date', { ascending: true }),
         supabase
+          .from('service_reports')
+          .select('id, next_service_date, customer:customers(id, name, phone, model)')
+          .gte('next_service_date', ninetyDaysAgoStr)
+          .lt('next_service_date', weekStart)
+          .order('next_service_date', { ascending: false }),
+        supabase
           .from('settings')
           .select('value')
           .eq('key', 'reminder_template')
           .maybeSingle(),
       ])
 
-      if (!error && data) setServices(data as unknown as DueService[])
+      if (weekData) setWeekServices(weekData as unknown as DueService[])
+      if (pastData) setPastServices(pastData as unknown as DueService[])
       if (settingData) setTemplate(settingData.value)
       setLoading(false)
     }
@@ -49,21 +63,64 @@ export function Dashboard() {
   }, [])
 
   const todayStr = today()
+  const services = tab === 'week' ? weekServices : pastServices
 
   return (
     <Layout>
       <div className="mb-4">
         <h2 className="text-lg font-semibold text-gray-900">Services Due</h2>
         <p className="text-xs text-gray-500 mt-0.5">
-          {toDisplayDate(toISODate(startOfWeek()))} &mdash; {toDisplayDate(toISODate(endOfWeek()))}
+          {tab === 'week'
+            ? `${toDisplayDate(toISODate(startOfWeek()))} — ${toDisplayDate(toISODate(endOfWeek()))}`
+            : 'Last 90 days before this week'}
         </p>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-2 mb-4">
+        <button
+          onClick={() => setTab('week')}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            tab === 'week'
+              ? 'bg-gray-900 text-white'
+              : 'bg-white border border-gray-200 text-gray-600'
+          }`}
+        >
+          This Week
+          {!loading && weekServices.length > 0 && (
+            <span className={`ml-2 text-xs px-1.5 py-0.5 rounded-full ${
+              tab === 'week' ? 'bg-white text-gray-900' : 'bg-gray-100 text-gray-600'
+            }`}>
+              {weekServices.length}
+            </span>
+          )}
+        </button>
+        <button
+          onClick={() => setTab('pastdue')}
+          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            tab === 'pastdue'
+              ? 'bg-red-600 text-white'
+              : 'bg-white border border-gray-200 text-gray-600'
+          }`}
+        >
+          Past Due
+          {!loading && pastServices.length > 0 && (
+            <span className={`ml-2 text-xs px-1.5 py-0.5 rounded-full ${
+              tab === 'pastdue' ? 'bg-white text-red-600' : 'bg-red-100 text-red-600'
+            }`}>
+              {pastServices.length}
+            </span>
+          )}
+        </button>
       </div>
 
       {loading ? (
         <p className="text-gray-400 text-sm">Loading...</p>
       ) : services.length === 0 ? (
         <div className="bg-white border border-gray-200 rounded-xl p-10 text-center">
-          <p className="text-gray-500 text-sm">No services due this week.</p>
+          <p className="text-gray-500 text-sm">
+            {tab === 'week' ? 'No services due this week.' : 'No past due services in the last 90 days.'}
+          </p>
         </div>
       ) : (
         <div className="space-y-3">
