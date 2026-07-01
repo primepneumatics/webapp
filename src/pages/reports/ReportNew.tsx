@@ -36,7 +36,6 @@ export function ReportNew() {
     hours_run: '',
     hours_until_next: '',
   })
-  const [checklist, setChecklist] = useState<Record<string, boolean>>({})
 
   useEffect(() => {
     supabase.from('customers').select('name').eq('id', id).single().then(({ data }) => {
@@ -80,17 +79,11 @@ export function ReportNew() {
     if (!svc) return
     if (selectedServices.find(s => s.id === svc.id)) return
     setSelectedServices(prev => [...prev, { id: svc.id, code: svc.code, name: svc.name, price: svc.price }])
-    setChecklist(prev => ({ ...prev, [svc.name]: false }))
     setServiceId('')
   }
 
   function removeService(svc: SelectedService) {
     setSelectedServices(prev => prev.filter(x => x.id !== svc.id))
-    setChecklist(prev => {
-      const next = { ...prev }
-      delete next[svc.name]
-      return next
-    })
   }
 
   const sparesTotal = selectedSpares.reduce((sum, s) => sum + s.amount, 0)
@@ -111,6 +104,10 @@ export function ReportNew() {
     const hoursUntilNext = parseFloat(form.hours_until_next)
     const reportDate = new Date(form.report_date)
     const nextServiceDate = calcNextServiceDate(reportDate, hoursUntilNext)
+
+    const checklist = Object.fromEntries(
+      serviceTypes.map(s => [s.name, selectedServices.some(ss => ss.id === s.id)])
+    )
 
     const { data, error } = await supabase
       .from('service_reports')
@@ -198,18 +195,20 @@ export function ReportNew() {
           {/* Checklist */}
           <div className="bg-white border border-gray-200 rounded-xl p-6">
             <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-4">Service Checklist</h3>
-            {Object.keys(checklist).length === 0 ? (
-              <p className="text-sm text-gray-400">Add services below to populate the checklist.</p>
+            {serviceTypes.length === 0 ? (
+              <p className="text-sm text-gray-400">No service types configured yet.</p>
             ) : (
               <div className="space-y-3">
-                {Object.entries(checklist).map(([key, done]) => (
-                  <label key={key} className="flex items-center gap-3 cursor-pointer">
-                    <input type="checkbox" checked={done}
-                      onChange={() => setChecklist(c => ({ ...c, [key]: !c[key] }))}
-                      className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
-                    <span className="text-sm text-gray-700">{key}</span>
-                  </label>
-                ))}
+                {serviceTypes.map(svc => {
+                  const checked = selectedServices.some(s => s.id === svc.id)
+                  return (
+                    <div key={svc.id} className="flex items-center gap-3">
+                      <input type="checkbox" checked={checked} readOnly
+                        className="w-4 h-4 rounded border-gray-300 text-blue-600 pointer-events-none" />
+                      <span className={`text-sm ${checked ? 'text-gray-900' : 'text-gray-400'}`}>{svc.name}</span>
+                    </div>
+                  )
+                })}
               </div>
             )}
           </div>
