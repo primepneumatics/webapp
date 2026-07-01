@@ -146,7 +146,7 @@ export function CustomerReports() {
               </div>
 
               {/* Desktop table + print */}
-              <div className="hidden sm:block bg-white border border-gray-200 rounded-xl overflow-hidden">
+              <div className="hidden sm:block print:block bg-white border border-gray-200 rounded-xl overflow-hidden">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-gray-100 text-left">
