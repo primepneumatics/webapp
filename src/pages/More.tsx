@@ -23,8 +23,7 @@ export function More() {
           <p className="text-xs text-gray-400 mt-0.5 capitalize">{role ?? 'user'}</p>
         </div>
 
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden divide-y divide-gray-100">
-          <MenuItem label="Search Reports" onClick={() => navigate('/search')} />
+        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
           <MenuItem label="My Profile" onClick={() => navigate('/profile')} />
         </div>
 
