@@ -124,9 +124,14 @@ export function ReportView() {
         </div>
 
         <div className="bg-white border border-gray-200 rounded-xl p-8 space-y-6">
-          <div className="border-b border-gray-100 pb-4">
-            <img src="/logo.png" alt="Prime Pneumatics & Consultants" className="h-10 w-auto mb-1" />
-            <p className="text-sm text-gray-500">Service Report</p>
+          <div className="border-b border-gray-100 pb-4 flex items-end justify-between">
+            <div>
+              <img src="/logo.png" alt="Prime Pneumatics & Consultants" className="h-10 w-auto mb-1" />
+              <p className="text-sm text-gray-500">Service Report</p>
+            </div>
+            {report.report_number && (
+              <p className="text-sm font-mono font-semibold text-gray-700">{srNum(report.report_number)}</p>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4 text-sm">
