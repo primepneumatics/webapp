@@ -9,6 +9,7 @@ import { useAuth } from '../../hooks/useAuth'
 type Result = {
   id: string
   report_number: number
+  filed_by_id: string | null
   report_date: string
   customer: { name: string }
 }
@@ -40,7 +41,7 @@ export function SearchReports() {
       if (customers && customers.length > 0) {
         let query = supabase
           .from('service_reports')
-          .select('id, report_number, report_date, customer:customers(name)')
+          .select('id, report_number, filed_by_id, report_date, customer:customers(name)')
           .in('customer_id', customers.map(c => c.id))
           .order('report_number', { ascending: false })
         if (!isAdmin && session) query = query.eq('filed_by_id', session.user.id)
@@ -54,7 +55,7 @@ export function SearchReports() {
       if (rn === null) { setLoading(false); return }
       const { data } = await supabase
         .from('service_reports')
-        .select('id, report_number, report_date, customer:customers(name)')
+        .select('id, report_number, filed_by_id, report_date, customer:customers(name)')
         .eq('report_number', rn)
       setResults((data as unknown as Result[]) ?? [])
     }
@@ -62,7 +63,7 @@ export function SearchReports() {
     if (tab === 'date') {
       let query = supabase
         .from('service_reports')
-        .select('id, report_number, report_date, customer:customers(name)')
+        .select('id, report_number, filed_by_id, report_date, customer:customers(name)')
         .order('report_number', { ascending: false })
       if (dateFrom) query = query.gte('report_date', dateFrom)
       if (dateTo) query = query.lte('report_date', dateTo)
@@ -179,19 +180,24 @@ export function SearchReports() {
           ) : (
             <div className="space-y-2">
               <p className="text-xs text-gray-400 px-1 mb-2">{results.length} report{results.length !== 1 ? 's' : ''} found</p>
-              {results.map(r => (
-                <Link key={r.id} to={`/reports/${r.id}`}
-                  className="flex items-center justify-between bg-white border border-gray-200 rounded-xl px-4 py-3.5 hover:bg-gray-50 active:bg-gray-100">
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">{r.customer.name}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">{toDisplayDate(r.report_date)}</p>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs font-mono font-semibold text-gray-600">{srNum(r.report_number)}</span>
-                    <span className="text-gray-300 text-lg">›</span>
-                  </div>
-                </Link>
-              ))}
+              {results.map(r => {
+                const isOwn = isAdmin || r.filed_by_id === session?.user.id
+                return (
+                  <Link key={r.id} to={`/reports/${r.id}`}
+                    className="flex items-center justify-between bg-white border border-gray-200 rounded-xl px-4 py-3.5 hover:bg-gray-50 active:bg-gray-100">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{r.customer.name}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{toDisplayDate(r.report_date)}</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs font-mono font-semibold text-gray-600">{srNum(r.report_number)}</span>
+                      <span className={`text-xs font-medium ${isOwn ? 'text-blue-600' : 'text-gray-500'}`}>
+                        {isOwn ? 'View' : 'Download'} ›
+                      </span>
+                    </div>
+                  </Link>
+                )
+              })}
             </div>
           )
         )}
