@@ -70,7 +70,7 @@ export function Profile() {
                     value={nameInput}
                     onChange={e => setNameInput(e.target.value)}
                     placeholder="Your name"
-                    className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                   <button type="submit" disabled={saving}
                     className="text-sm text-blue-600 font-medium hover:underline disabled:opacity-50">
