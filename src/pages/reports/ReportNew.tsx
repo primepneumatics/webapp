@@ -31,7 +31,7 @@ const [customerName, setCustomerName] = useState('')
 
   const [form, setForm] = useState({
     report_date: today(),
-    fob: '',
+    fab: '',
     remarks: '',
     hours_run: '',
     hours_until_next: '',
@@ -111,7 +111,7 @@ const [customerName, setCustomerName] = useState('')
       .insert({
         customer_id: id,
         report_date: form.report_date,
-        fob: form.fob,
+        fab: form.fab,
         remarks: form.remarks,
         hours_run: parseFloat(form.hours_run),
         hours_until_next: hoursUntilNext,
@@ -163,8 +163,8 @@ const [customerName, setCustomerName] = useState('')
                 type="text"
                 inputMode="numeric"
                 maxLength={10}
-                value={form.fob}
-                onChange={e => setForm(f => ({ ...f, fob: e.target.value.replace(/\D/g, '').slice(0, 10) }))}
+                value={form.fab}
+                onChange={e => setForm(f => ({ ...f, fab: e.target.value.replace(/\D/g, '').slice(0, 10) }))}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>

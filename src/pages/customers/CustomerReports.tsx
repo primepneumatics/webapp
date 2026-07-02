@@ -7,7 +7,7 @@ import { Layout } from '../../components/Layout'
 type Report = {
   id: string
   report_date: string
-  fob: string
+  fab: string
   hours_run: number
   spares_cost: number
   total_amount: number
@@ -33,7 +33,7 @@ export function CustomerReports() {
     setLoading(true)
     let query = supabase
       .from('service_reports')
-      .select('id, report_date, fob, hours_run, spares_cost, total_amount, next_service_date')
+      .select('id, report_date, fab, hours_run, spares_cost, total_amount, next_service_date')
       .eq('customer_id', id)
       .order('report_date', { ascending: false })
 
@@ -131,7 +131,7 @@ export function CustomerReports() {
                     </div>
                     <div className="grid grid-cols-2 gap-y-2 text-sm">
                       <span className="text-gray-500">FAB</span>
-                      <span className="text-gray-900 text-right">{r.fob || '—'}</span>
+                      <span className="text-gray-900 text-right">{r.fab || '—'}</span>
                       <span className="text-gray-500">Hours Run</span>
                       <span className="text-gray-900 text-right">{r.hours_run}</span>
                       <span className="text-gray-500">Subtotal</span>
@@ -163,7 +163,7 @@ export function CustomerReports() {
                     {reports.map(r => (
                       <tr key={r.id} className="border-b border-gray-50 hover:bg-gray-50">
                         <td className="px-4 py-3 text-gray-900">{toDisplayDate(r.report_date)}</td>
-                        <td className="px-4 py-3 text-gray-600">{r.fob || '—'}</td>
+                        <td className="px-4 py-3 text-gray-600">{r.fab || '—'}</td>
                         <td className="px-4 py-3 text-gray-600">{r.hours_run}</td>
                         <td className="px-4 py-3 text-gray-600">₹{r.spares_cost?.toFixed(2) ?? '0.00'}</td>
                         <td className="px-4 py-3 text-gray-900 font-medium">₹{r.total_amount?.toFixed(2) ?? r.spares_cost?.toFixed(2) ?? '0.00'}</td>

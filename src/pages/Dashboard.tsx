@@ -10,7 +10,7 @@ type DueService = {
   id: string
   next_service_date: string
   report_date: string
-  fob: string
+  fab: string
   customer: {
     id: string
     name: string
@@ -39,13 +39,13 @@ export function Dashboard() {
       const [{ data: weekData }, { data: pastData }, { data: settingData }] = await Promise.all([
         supabase
           .from('service_reports')
-          .select('id, next_service_date, report_date, fob, customer:customers(id, name, phone, model)')
+          .select('id, next_service_date, report_date, fab, customer:customers(id, name, phone, model)')
           .gte('next_service_date', weekStart)
           .lte('next_service_date', weekEnd)
           .order('next_service_date', { ascending: true }),
         supabase
           .from('service_reports')
-          .select('id, next_service_date, report_date, fob, customer:customers(id, name, phone, model)')
+          .select('id, next_service_date, report_date, fab, customer:customers(id, name, phone, model)')
           .gte('next_service_date', ninetyDaysAgoStr)
           .lt('next_service_date', weekStart)
           .order('next_service_date', { ascending: false }),
@@ -153,7 +153,7 @@ export function Dashboard() {
                 <div className="flex flex-wrap gap-x-3 text-xs text-gray-400 mt-0.5 mb-3">
                   <span>Due: {toDisplayDate(s.next_service_date)}</span>
                   <span>Serviced: {toDisplayDate(s.report_date)}</span>
-                  {s.fob && <span>FAB: {s.fob}</span>}
+                  {s.fab && <span>FAB: {s.fab}</span>}
                 </div>
 
                 <div className="flex gap-2">
