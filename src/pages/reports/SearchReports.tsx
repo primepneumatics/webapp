@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase'
 import { Layout } from '../../components/Layout'
 import { toDisplayDate, today } from '../../utils/dateEngine'
 import { srNum, parseReportNumber } from '../../utils/reportNumber'
+import { useAuth } from '../../hooks/useAuth'
 
 type Result = {
   id: string
@@ -15,6 +16,7 @@ type Result = {
 type Tab = 'customer' | 'report_no' | 'date'
 
 export function SearchReports() {
+  const { isAdmin, session } = useAuth()
   const [tab, setTab] = useState<Tab>('customer')
   const [customerQuery, setCustomerQuery] = useState('')
   const [reportNoQuery, setReportNoQuery] = useState('')
@@ -36,11 +38,13 @@ export function SearchReports() {
       const { data: customers } = await supabase
         .from('customers').select('id').ilike('name', `%${q}%`)
       if (customers && customers.length > 0) {
-        const { data } = await supabase
+        let query = supabase
           .from('service_reports')
           .select('id, report_number, report_date, customer:customers(name)')
           .in('customer_id', customers.map(c => c.id))
           .order('report_number', { ascending: false })
+        if (!isAdmin && session) query = query.eq('filed_by_id', session.user.id)
+        const { data } = await query
         setResults((data as unknown as Result[]) ?? [])
       }
     }
@@ -62,6 +66,7 @@ export function SearchReports() {
         .order('report_number', { ascending: false })
       if (dateFrom) query = query.gte('report_date', dateFrom)
       if (dateTo) query = query.lte('report_date', dateTo)
+      if (!isAdmin && session) query = query.eq('filed_by_id', session.user.id)
       const { data } = await query
       setResults((data as unknown as Result[]) ?? [])
     }
