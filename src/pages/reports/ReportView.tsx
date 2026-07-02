@@ -201,12 +201,12 @@ export function ReportView() {
 
           <div className="border-t border-gray-100 pt-4 space-y-1">
             {spares.length > 0 && (
-              <div className="flex justify-between text-sm text-gray-500">
+              <div className="flex justify-between text-sm text-gray-500 rates-col">
                 <span>Spares Total</span><span>₹{sparesTotal.toFixed(2)}</span>
               </div>
             )}
             {services.length > 0 && (
-              <div className="flex justify-between text-sm text-gray-500">
+              <div className="flex justify-between text-sm text-gray-500 rates-col">
                 <span>Services Total</span><span>₹{servicesTotal.toFixed(2)}</span>
               </div>
             )}
