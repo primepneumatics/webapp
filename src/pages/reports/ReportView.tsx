@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { toDisplayDate } from '../../utils/dateEngine'
@@ -38,6 +38,16 @@ export function ReportView() {
   const navigate = useNavigate()
   const [report, setReport] = useState<Report | null>(null)
   const [loading, setLoading] = useState(true)
+  const [printOpen, setPrintOpen] = useState(false)
+  const printRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (printRef.current && !printRef.current.contains(e.target as Node)) setPrintOpen(false)
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   useEffect(() => {
     supabase
@@ -73,21 +83,38 @@ export function ReportView() {
               className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">
               Report History
             </button>
-            <button onClick={() => window.print()}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">
-              Full Report
-            </button>
-            <button onClick={() => {
-              const style = document.createElement('style')
-              style.id = '__no-rates__'
-              style.textContent = '.rates-col { display: none !important; } .rates-totals { display: none !important; }'
-              document.head.appendChild(style)
-              window.print()
-              document.head.removeChild(style)
-            }}
-              className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors">
-              No Rates
-            </button>
+            <div ref={printRef} className="relative">
+              <button
+                onClick={() => setPrintOpen(v => !v)}
+                className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors flex items-center gap-1.5"
+              >
+                Print
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
+              </button>
+              {printOpen && (
+                <div className="absolute right-0 mt-1 w-44 bg-white border border-gray-200 rounded-xl shadow-lg z-20 overflow-hidden">
+                  <button
+                    onClick={() => { setPrintOpen(false); window.print() }}
+                    className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
+                  >
+                    Full Report
+                  </button>
+                  <button
+                    onClick={() => {
+                      setPrintOpen(false)
+                      const style = document.createElement('style')
+                      style.textContent = '.rates-col { display: none !important; }'
+                      document.head.appendChild(style)
+                      window.print()
+                      document.head.removeChild(style)
+                    }}
+                    className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 border-t border-gray-100"
+                  >
+                    No Rates
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -172,7 +199,7 @@ export function ReportView() {
             </div>
           )}
 
-          <div className="border-t border-gray-100 pt-4 space-y-1 rates-totals">
+          <div className="border-t border-gray-100 pt-4 space-y-1">
             {spares.length > 0 && (
               <div className="flex justify-between text-sm text-gray-500">
                 <span>Spares Total</span><span>₹{sparesTotal.toFixed(2)}</span>
