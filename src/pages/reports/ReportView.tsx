@@ -74,8 +74,19 @@ export function ReportView() {
               Report History
             </button>
             <button onClick={() => window.print()}
+              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">
+              Full Report
+            </button>
+            <button onClick={() => {
+              const style = document.createElement('style')
+              style.id = '__no-rates__'
+              style.textContent = '.rates-col { display: none !important; } .rates-totals { display: none !important; }'
+              document.head.appendChild(style)
+              window.print()
+              document.head.removeChild(style)
+            }}
               className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors">
-              Print
+              No Rates
             </button>
           </div>
         </div>
@@ -119,8 +130,8 @@ export function ReportView() {
                   <tr className="text-left text-xs text-gray-400 border-b border-gray-100">
                     <th className="pb-1">Code</th><th className="pb-1">Name</th>
                     <th className="pb-1 text-right">Qty</th>
-                    <th className="pb-1 text-right">Unit Price</th>
-                    <th className="pb-1 text-right">Amount</th>
+                    <th className="pb-1 text-right rates-col">Unit Price</th>
+                    <th className="pb-1 text-right rates-col">Amount</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -129,8 +140,8 @@ export function ReportView() {
                       <td className="py-1.5 font-mono text-gray-600 text-xs">{s.code}</td>
                       <td className="py-1.5 text-gray-800">{s.name}</td>
                       <td className="py-1.5 text-right text-gray-600">{s.qty}</td>
-                      <td className="py-1.5 text-right text-gray-600">₹{s.unit_price.toFixed(2)}</td>
-                      <td className="py-1.5 text-right font-medium text-gray-900">₹{s.amount.toFixed(2)}</td>
+                      <td className="py-1.5 text-right text-gray-600 rates-col">₹{s.unit_price.toFixed(2)}</td>
+                      <td className="py-1.5 text-right font-medium text-gray-900 rates-col">₹{s.amount.toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -145,7 +156,7 @@ export function ReportView() {
                 <thead>
                   <tr className="text-left text-xs text-gray-400 border-b border-gray-100">
                     <th className="pb-1">Code</th><th className="pb-1">Name</th>
-                    <th className="pb-1 text-right">Price</th>
+                    <th className="pb-1 text-right rates-col">Price</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -153,7 +164,7 @@ export function ReportView() {
                     <tr key={s.id} className="border-b border-gray-50">
                       <td className="py-1.5 font-mono text-gray-600 text-xs">{s.code}</td>
                       <td className="py-1.5 text-gray-800">{s.name}</td>
-                      <td className="py-1.5 text-right font-medium text-gray-900">₹{s.price.toFixed(2)}</td>
+                      <td className="py-1.5 text-right font-medium text-gray-900 rates-col">₹{s.price.toFixed(2)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -161,7 +172,7 @@ export function ReportView() {
             </div>
           )}
 
-          <div className="border-t border-gray-100 pt-4 space-y-1">
+          <div className="border-t border-gray-100 pt-4 space-y-1 rates-totals">
             {spares.length > 0 && (
               <div className="flex justify-between text-sm text-gray-500">
                 <span>Spares Total</span><span>₹{sparesTotal.toFixed(2)}</span>
