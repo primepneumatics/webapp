@@ -19,6 +19,10 @@ body {
   }
 }
 
+@page {
+  margin: 0;
+}
+
 @media print {
   .no-print {
     display: none !important;
@@ -27,5 +31,6 @@ body {
   body {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
+    padding: 24px;
   }
 }
