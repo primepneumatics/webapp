@@ -92,8 +92,8 @@ export function ReportView() {
         style.textContent = '.rates-col { display: none !important; }'
         document.head.appendChild(style)
       }
-      const safeName = report.customer.name.replace(/[^a-zA-Z0-9]/g, '-')
-      const filename = `${srNum(report.report_number)}_${safeName}_${report.report_date}.pdf`
+      const safeName = (report?.customer.name ?? '').replace(/[^a-zA-Z0-9]/g, '-')
+      const filename = `${srNum(report?.report_number ?? 0)}_${safeName}_${report?.report_date ?? ''}.pdf`
       await html2pdf()
         .set({
           margin: 10,
