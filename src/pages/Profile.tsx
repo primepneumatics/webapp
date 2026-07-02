@@ -19,6 +19,7 @@ export function Profile() {
   const [editing, setEditing] = useState(false)
   const [nameInput, setNameInput] = useState('')
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState('')
 
   useEffect(() => {
     if (!session) return
@@ -38,7 +39,13 @@ export function Profile() {
     e.preventDefault()
     if (!session) return
     setSaving(true)
-    await supabase.from('profiles').update({ name: nameInput.trim() || null }).eq('id', session.user.id)
+    setSaveError('')
+    const { error } = await supabase.from('profiles').update({ name: nameInput.trim() || null }).eq('id', session.user.id)
+    if (error) {
+      setSaveError(error.message)
+      setSaving(false)
+      return
+    }
     setProfile(p => p ? { ...p, name: nameInput.trim() || null } : p)
     setEditing(false)
     setSaving(false)
@@ -71,12 +78,13 @@ export function Profile() {
                   style={{ fontSize: '16px' }}
                   className="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
+                {saveError && <p className="text-xs text-red-600">{saveError}</p>}
                 <div className="flex gap-3">
                   <button type="submit" disabled={saving}
                     className="flex-1 bg-blue-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
                     {saving ? 'Saving…' : 'Save'}
                   </button>
-                  <button type="button" onClick={() => { setEditing(false); setNameInput(profile.name ?? '') }}
+                  <button type="button" onClick={() => { setEditing(false); setNameInput(profile.name ?? ''); setSaveError('') }}
                     className="flex-1 border border-gray-300 text-gray-700 rounded-lg py-2 text-sm font-medium hover:bg-gray-50">
                     Cancel
                   </button>
