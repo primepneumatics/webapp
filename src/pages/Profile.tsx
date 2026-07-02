@@ -60,28 +60,31 @@ export function Profile() {
           <p className="text-red-500 text-sm">Profile not found.</p>
         ) : (
           <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
-            <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-500 w-36 shrink-0">Name</span>
-              {editing ? (
-                <form onSubmit={handleSaveName} className="flex items-center gap-2 flex-1">
-                  <input
-                    autoFocus
-                    type="text"
-                    value={nameInput}
-                    onChange={e => setNameInput(e.target.value)}
-                    placeholder="Your name"
-                    className="flex-1 border border-gray-300 rounded-lg px-3 py-1.5 text-base focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  />
+            {editing ? (
+              <form onSubmit={handleSaveName} className="space-y-3">
+                <label className="block text-sm text-gray-500">Name</label>
+                <input
+                  type="text"
+                  value={nameInput}
+                  onChange={e => setNameInput(e.target.value)}
+                  placeholder="Your name"
+                  style={{ fontSize: '16px' }}
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <div className="flex gap-3">
                   <button type="submit" disabled={saving}
-                    className="text-sm text-blue-600 font-medium hover:underline disabled:opacity-50">
+                    className="flex-1 bg-blue-600 text-white rounded-lg py-2 text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
                     {saving ? 'Saving…' : 'Save'}
                   </button>
                   <button type="button" onClick={() => { setEditing(false); setNameInput(profile.name ?? '') }}
-                    className="text-sm text-gray-400 hover:text-gray-600">
+                    className="flex-1 border border-gray-300 text-gray-700 rounded-lg py-2 text-sm font-medium hover:bg-gray-50">
                     Cancel
                   </button>
-                </form>
-              ) : (
+                </div>
+              </form>
+            ) : (
+              <div className="flex items-center gap-4">
+                <span className="text-sm text-gray-500 w-36 shrink-0">Name</span>
                 <div className="flex items-center gap-2 flex-1">
                   <span className="text-sm text-gray-900">{profile.name || <span className="text-gray-400 italic">Not set</span>}</span>
                   <button onClick={() => setEditing(true)}
@@ -89,8 +92,8 @@ export function Profile() {
                     Edit
                   </button>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
             <Row label="Phone Number" value={profile.phone} />
             <Row label="Role" value={profile.role} badge />
             <Row label="Member Since" value={new Date(profile.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })} />
