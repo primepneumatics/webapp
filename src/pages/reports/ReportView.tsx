@@ -82,7 +82,7 @@ export function ReportView() {
 
         <div className="bg-white border border-gray-200 rounded-xl p-8 space-y-6">
           <div className="border-b border-gray-100 pb-4">
-            <h1 className="text-lg font-bold text-gray-900">Prime Pneumatics</h1>
+            <img src="/logo.png" alt="Prime Pneumatics & Consultants" className="h-10 w-auto mb-1" />
             <p className="text-sm text-gray-500">Service Report</p>
           </div>
 

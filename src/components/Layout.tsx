@@ -13,7 +13,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     <div className="min-h-[100dvh] bg-gray-50 pb-16" style={{ paddingBottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
       <header className="bg-white border-b border-gray-200 sticky top-0 z-10 no-print">
         <div className="px-4 h-12 flex items-center" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
-          <span className="font-semibold text-gray-900 text-sm">Prime Pneumatics</span>
+          <img src="/logo.png" alt="Prime Pneumatics & Consultants" className="h-7 w-auto" />
         </div>
       </header>
 

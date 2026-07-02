@@ -32,9 +32,9 @@ export function Login() {
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
       <div className="w-full max-w-sm bg-white rounded-2xl shadow-sm border border-gray-200 p-8">
-        <div className="mb-8">
-          <h1 className="text-2xl font-semibold text-gray-900">Prime Pneumatics</h1>
-          <p className="text-sm text-gray-500 mt-1">Service Report System</p>
+        <div className="mb-8 flex flex-col items-center">
+          <img src="/logo.png" alt="Prime Pneumatics & Consultants" className="h-16 w-auto mb-2" />
+          <p className="text-sm text-gray-500">Service Report System</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
