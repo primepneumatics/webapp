@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase'
 import { toDisplayDate } from '../../utils/dateEngine'
 import { srNum } from '../../utils/reportNumber'
 import { Layout } from '../../components/Layout'
+import { useAuth } from '../../hooks/useAuth'
 
 const CHECKLIST_LABELS: Record<string, string> = {
   air_filter: 'Replaced air filter',
@@ -21,6 +22,7 @@ type Report = {
   id: string
   report_number: number
   customer_id: string
+  filed_by_id: string | null
   report_date: string
   fab: string
   remarks: string
@@ -38,6 +40,7 @@ type Report = {
 export function ReportView() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { isAdmin, session } = useAuth()
   const [report, setReport] = useState<Report | null>(null)
   const [loading, setLoading] = useState(true)
   const [printOpen, setPrintOpen] = useState(false)
@@ -54,7 +57,7 @@ export function ReportView() {
   useEffect(() => {
     supabase
       .from('service_reports')
-      .select('*, report_number, customer:customers(name, org, phone, gst, model), filed_by:profiles!filed_by_id(name, phone)')
+      .select('*, report_number, filed_by_id, customer:customers(name, org, phone, gst, model), filed_by:profiles!filed_by_id(name, phone)')
       .eq('id', id)
       .single()
       .then(({ data }) => {
@@ -66,62 +69,81 @@ export function ReportView() {
   if (loading) return <Layout><p className="text-gray-400 text-sm">Loading...</p></Layout>
   if (!report) return <Layout><p className="text-red-500 text-sm">Report not found.</p></Layout>
 
+  const isOwn = isAdmin || report.filed_by_id === session?.user.id
+
   const spares: SelectedSpare[] = report.selected_spares ?? []
   const services: SelectedService[] = report.selected_services ?? []
   const sparesTotal = spares.reduce((sum, s) => sum + s.amount, 0)
   const servicesTotal = services.reduce((sum, s) => sum + s.price, 0)
   const grandTotal = report.total_amount ?? (sparesTotal + servicesTotal)
 
+  const PrintDropdown = (
+    <div ref={printRef} className="relative">
+      <button
+        onClick={() => setPrintOpen(v => !v)}
+        className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors flex items-center gap-1.5"
+      >
+        Download
+        <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
+      </button>
+      {printOpen && (
+        <div className="absolute right-0 mt-1 w-44 bg-white border border-gray-200 rounded-xl shadow-lg z-20 overflow-hidden">
+          <button
+            onClick={() => { setPrintOpen(false); window.print() }}
+            className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
+          >
+            Full Report
+          </button>
+          <button
+            onClick={() => {
+              setPrintOpen(false)
+              const style = document.createElement('style')
+              style.textContent = '.rates-col { display: none !important; }'
+              document.head.appendChild(style)
+              window.print()
+              document.head.removeChild(style)
+            }}
+            className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 border-t border-gray-100"
+          >
+            No Rates
+          </button>
+        </div>
+      )}
+    </div>
+  )
+
   return (
     <Layout>
       <div className="max-w-2xl">
-        <div className="flex items-center justify-between mb-6 no-print">
-          <div className="flex items-center gap-3">
-            <button onClick={() => navigate(`/customers/${report.customer_id}`)} className="text-gray-400 hover:text-gray-600">← Back</button>
-            <div>
-              <h2 className="text-xl font-semibold text-gray-900">Service Report</h2>
-              {report.report_number && <p className="text-xs text-gray-400 font-mono">{srNum(report.report_number)}</p>}
+        {isOwn ? (
+          <div className="flex items-center justify-between mb-6 no-print">
+            <div className="flex items-center gap-3">
+              <button onClick={() => navigate(`/customers/${report.customer_id}`)} className="text-gray-400 hover:text-gray-600">← Back</button>
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">Service Report</h2>
+                {report.report_number && <p className="text-xs text-gray-400 font-mono">{srNum(report.report_number)}</p>}
+              </div>
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <button onClick={() => navigate(`/customers/${report.customer_id}/reports`)}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">
-              Report History
-            </button>
-            <div ref={printRef} className="relative">
-              <button
-                onClick={() => setPrintOpen(v => !v)}
-                className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors flex items-center gap-1.5"
-              >
-                Print
-                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z"/></svg>
+            <div className="flex items-center gap-2">
+              <button onClick={() => navigate(`/customers/${report.customer_id}/reports`)}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">
+                Report History
               </button>
-              {printOpen && (
-                <div className="absolute right-0 mt-1 w-44 bg-white border border-gray-200 rounded-xl shadow-lg z-20 overflow-hidden">
-                  <button
-                    onClick={() => { setPrintOpen(false); window.print() }}
-                    className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
-                  >
-                    Full Report
-                  </button>
-                  <button
-                    onClick={() => {
-                      setPrintOpen(false)
-                      const style = document.createElement('style')
-                      style.textContent = '.rates-col { display: none !important; }'
-                      document.head.appendChild(style)
-                      window.print()
-                      document.head.removeChild(style)
-                    }}
-                    className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 border-t border-gray-100"
-                  >
-                    No Rates
-                  </button>
-                </div>
-              )}
+              {PrintDropdown}
             </div>
           </div>
-        </div>
+        ) : (
+          <div className="flex items-center justify-between mb-6 no-print">
+            <div className="flex items-center gap-3">
+              <button onClick={() => navigate(-1)} className="text-gray-400 hover:text-gray-600">← Back</button>
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">Service Report</h2>
+                {report.report_number && <p className="text-xs text-gray-400 font-mono">{srNum(report.report_number)}</p>}
+              </div>
+            </div>
+            {PrintDropdown}
+          </div>
+        )}
 
         <div className="bg-white border border-gray-200 rounded-xl p-8 space-y-6">
           <div className="border-b border-gray-100 pb-4 flex items-end justify-between">

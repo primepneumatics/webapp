@@ -6,10 +6,12 @@ import { toISODate, toDisplayDate, startOfWeek, endOfWeek, today } from '../util
 import { DEFAULT_REMINDER_TEMPLATE, buildReminderMessage, buildReminderLink } from '../utils/reminderTemplate'
 import { normalizePhone } from '../utils/whatsapp'
 import { srNum } from '../utils/reportNumber'
+import { useAuth } from '../hooks/useAuth'
 
 type DueService = {
   id: string
   report_number: number
+  filed_by_id: string | null
   next_service_date: string
   report_date: string
   fab: string
@@ -24,6 +26,7 @@ type DueService = {
 type Tab = 'week' | 'pastdue'
 
 export function Dashboard() {
+  const { isAdmin, session } = useAuth()
   const [tab, setTab] = useState<Tab>('week')
   const [weekServices, setWeekServices] = useState<DueService[]>([])
   const [pastServices, setPastServices] = useState<DueService[]>([])
@@ -41,13 +44,13 @@ export function Dashboard() {
       const [{ data: weekData }, { data: pastData }, { data: settingData }] = await Promise.all([
         supabase
           .from('service_reports')
-          .select('id, report_number, next_service_date, report_date, fab, customer:customers(id, name, phone, model)')
+          .select('id, report_number, filed_by_id, next_service_date, report_date, fab, customer:customers(id, name, phone, model)')
           .gte('next_service_date', weekStart)
           .lte('next_service_date', weekEnd)
           .order('next_service_date', { ascending: true }),
         supabase
           .from('service_reports')
-          .select('id, report_number, next_service_date, report_date, fab, customer:customers(id, name, phone, model)')
+          .select('id, report_number, filed_by_id, next_service_date, report_date, fab, customer:customers(id, name, phone, model)')
           .gte('next_service_date', ninetyDaysAgoStr)
           .lt('next_service_date', weekStart)
           .order('next_service_date', { ascending: false }),
@@ -137,6 +140,8 @@ export function Dashboard() {
             })
             const reminderLink = buildReminderLink(normalizePhone(s.customer.phone), message)
 
+            const isOwn = isAdmin || s.filed_by_id === session?.user.id
+
             return (
               <div key={s.id} className="bg-white border border-gray-200 rounded-xl p-4">
                 <div className="flex items-start justify-between mb-1">
@@ -172,7 +177,7 @@ export function Dashboard() {
                     to={`/reports/${s.id}`}
                     className="flex-1 py-2 bg-blue-50 text-blue-700 rounded-lg text-xs font-semibold text-center"
                   >
-                    View
+                    {isOwn ? 'View' : 'Download'}
                   </Link>
                   <a
                     href={reminderLink}
