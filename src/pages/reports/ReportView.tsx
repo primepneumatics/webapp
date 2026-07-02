@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { toDisplayDate } from '../../utils/dateEngine'
+import { srNum } from '../../utils/reportNumber'
 import { Layout } from '../../components/Layout'
 
 const CHECKLIST_LABELS: Record<string, string> = {
@@ -18,6 +19,7 @@ type SelectedService = { id: string; code: string; name: string; price: number }
 
 type Report = {
   id: string
+  report_number: number
   customer_id: string
   report_date: string
   fab: string
@@ -52,7 +54,7 @@ export function ReportView() {
   useEffect(() => {
     supabase
       .from('service_reports')
-      .select('*, customer:customers(name, org, phone, gst, model), filed_by:profiles!filed_by_id(name, phone)')
+      .select('*, report_number, customer:customers(name, org, phone, gst, model), filed_by:profiles!filed_by_id(name, phone)')
       .eq('id', id)
       .single()
       .then(({ data }) => {
@@ -76,7 +78,10 @@ export function ReportView() {
         <div className="flex items-center justify-between mb-6 no-print">
           <div className="flex items-center gap-3">
             <button onClick={() => navigate(`/customers/${report.customer_id}`)} className="text-gray-400 hover:text-gray-600">← Back</button>
-            <h2 className="text-xl font-semibold text-gray-900">Service Report</h2>
+            <div>
+              <h2 className="text-xl font-semibold text-gray-900">Service Report</h2>
+              {report.report_number && <p className="text-xs text-gray-400 font-mono">{srNum(report.report_number)}</p>}
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <button onClick={() => navigate(`/customers/${report.customer_id}/reports`)}
@@ -131,6 +136,7 @@ export function ReportView() {
             <InfoRow label="GST" value={report.customer.gst} />
             <InfoRow label="Model" value={report.customer.model} />
             <InfoRow label="Report Date" value={toDisplayDate(report.report_date)} />
+            <InfoRow label="Report No." value={report.report_number ? srNum(report.report_number) : '—'} />
             <InfoRow label="FAB Number" value={report.fab} />
             <InfoRow label="Hours Run" value={String(report.hours_run)} />
             <InfoRow label="Hours Until Next" value={String(report.hours_until_next)} />

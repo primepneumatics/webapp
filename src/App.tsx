@@ -9,6 +9,7 @@ import { CustomerEdit } from './pages/customers/CustomerEdit'
 import { CustomerReports } from './pages/customers/CustomerReports'
 import { ReportNew } from './pages/reports/ReportNew'
 import { ReportView } from './pages/reports/ReportView'
+import { SearchReports } from './pages/reports/SearchReports'
 import { InviteUser } from './pages/admin/InviteUser'
 import { SparePartsList } from './pages/admin/SparePartsList'
 import { ServiceTypesList } from './pages/admin/ServiceTypesList'
@@ -31,6 +32,7 @@ export default function App() {
         <Route path="/customers/:id/reports" element={<ProtectedRoute><CustomerReports /></ProtectedRoute>} />
         <Route path="/customers/:id/reports/new" element={<ProtectedRoute><ReportNew /></ProtectedRoute>} />
         <Route path="/reports/:id" element={<ProtectedRoute><ReportView /></ProtectedRoute>} />
+        <Route path="/search" element={<ProtectedRoute><SearchReports /></ProtectedRoute>} />
         <Route path="/admin/invite" element={<ProtectedRoute><InviteUser /></ProtectedRoute>} />
         <Route path="/admin/spare-parts" element={<ProtectedRoute><SparePartsList /></ProtectedRoute>} />
         <Route path="/admin/service-types" element={<ProtectedRoute><ServiceTypesList /></ProtectedRoute>} />

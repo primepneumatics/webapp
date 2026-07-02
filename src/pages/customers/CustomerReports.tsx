@@ -2,10 +2,12 @@ import { useEffect, useState } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { toDisplayDate } from '../../utils/dateEngine'
+import { srNum } from '../../utils/reportNumber'
 import { Layout } from '../../components/Layout'
 
 type Report = {
   id: string
+  report_number: number
   report_date: string
   fab: string
   hours_run: number
@@ -33,7 +35,7 @@ export function CustomerReports() {
     setLoading(true)
     let query = supabase
       .from('service_reports')
-      .select('id, report_date, fab, hours_run, spares_cost, total_amount, next_service_date')
+      .select('id, report_number, report_date, fab, hours_run, spares_cost, total_amount, next_service_date')
       .eq('customer_id', id)
       .order('report_date', { ascending: false })
 
@@ -121,7 +123,10 @@ export function CustomerReports() {
                 {reports.map(r => (
                   <div key={r.id} className="bg-white border border-gray-200 rounded-xl p-4">
                     <div className="flex items-center justify-between mb-3">
-                      <span className="text-sm font-semibold text-gray-900">{toDisplayDate(r.report_date)}</span>
+                      <div>
+                        <span className="text-sm font-semibold text-gray-900">{toDisplayDate(r.report_date)}</span>
+                        {r.report_number && <span className="ml-2 text-xs font-mono text-gray-400">{srNum(r.report_number)}</span>}
+                      </div>
                       <Link
                         to={`/reports/${r.id}`}
                         className="text-xs text-blue-600 font-medium hover:underline"
@@ -150,6 +155,7 @@ export function CustomerReports() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-gray-100 text-left">
+                      <th className="px-4 py-3 font-medium text-gray-600">No.</th>
                       <th className="px-4 py-3 font-medium text-gray-600">Report Date</th>
                       <th className="px-4 py-3 font-medium text-gray-600">FAB</th>
                       <th className="px-4 py-3 font-medium text-gray-600">Hours Run</th>
@@ -162,6 +168,7 @@ export function CustomerReports() {
                   <tbody>
                     {reports.map(r => (
                       <tr key={r.id} className="border-b border-gray-50 hover:bg-gray-50">
+                        <td className="px-4 py-3 font-mono text-xs text-gray-500">{r.report_number ? srNum(r.report_number) : '—'}</td>
                         <td className="px-4 py-3 text-gray-900">{toDisplayDate(r.report_date)}</td>
                         <td className="px-4 py-3 text-gray-600">{r.fab || '—'}</td>
                         <td className="px-4 py-3 text-gray-600">{r.hours_run}</td>
