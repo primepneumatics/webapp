@@ -5,9 +5,11 @@ import { Layout } from '../components/Layout'
 import { toISODate, toDisplayDate, startOfWeek, endOfWeek, today } from '../utils/dateEngine'
 import { DEFAULT_REMINDER_TEMPLATE, buildReminderMessage, buildReminderLink } from '../utils/reminderTemplate'
 import { normalizePhone } from '../utils/whatsapp'
+import { srNum } from '../utils/reportNumber'
 
 type DueService = {
   id: string
+  report_number: number
   next_service_date: string
   report_date: string
   fab: string
@@ -39,13 +41,13 @@ export function Dashboard() {
       const [{ data: weekData }, { data: pastData }, { data: settingData }] = await Promise.all([
         supabase
           .from('service_reports')
-          .select('id, next_service_date, report_date, fab, customer:customers(id, name, phone, model)')
+          .select('id, report_number, next_service_date, report_date, fab, customer:customers(id, name, phone, model)')
           .gte('next_service_date', weekStart)
           .lte('next_service_date', weekEnd)
           .order('next_service_date', { ascending: true }),
         supabase
           .from('service_reports')
-          .select('id, next_service_date, report_date, fab, customer:customers(id, name, phone, model)')
+          .select('id, report_number, next_service_date, report_date, fab, customer:customers(id, name, phone, model)')
           .gte('next_service_date', ninetyDaysAgoStr)
           .lt('next_service_date', weekStart)
           .order('next_service_date', { ascending: false }),
@@ -138,7 +140,10 @@ export function Dashboard() {
             return (
               <div key={s.id} className="bg-white border border-gray-200 rounded-xl p-4">
                 <div className="flex items-start justify-between mb-1">
-                  <p className="font-semibold text-gray-900 text-sm">{s.customer.name}</p>
+                  <div>
+                    <p className="font-semibold text-gray-900 text-sm">{s.customer.name}</p>
+                    {s.report_number && <p className="text-xs font-mono text-gray-400">{srNum(s.report_number)}</p>}
+                  </div>
                   {isPastDue ? (
                     <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700 shrink-0 ml-2">
                       Past Due
