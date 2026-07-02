@@ -42,7 +42,7 @@ export function ReportView() {
   useEffect(() => {
     supabase
       .from('service_reports')
-      .select('*, customer:customers(name, org, phone, gst, model), filed_by:profiles(name, phone)')
+      .select('*, customer:customers(name, org, phone, gst, model), filed_by:profiles!filed_by_id(name, phone)')
       .eq('id', id)
       .single()
       .then(({ data }) => {
