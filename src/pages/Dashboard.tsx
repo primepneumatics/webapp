@@ -164,7 +164,7 @@ export function Dashboard() {
                     Call
                   </a>
                   <Link
-                    to={`/customers/${s.customer.id}`}
+                    to={`/reports/${s.id}`}
                     className="flex-1 py-2 bg-blue-50 text-blue-700 rounded-lg text-xs font-semibold text-center"
                   >
                     View
