@@ -130,7 +130,7 @@ export function CustomerReports() {
                       </Link>
                     </div>
                     <div className="grid grid-cols-2 gap-y-2 text-sm">
-                      <span className="text-gray-500">FOB</span>
+                      <span className="text-gray-500">FAB</span>
                       <span className="text-gray-900 text-right">{r.fob || '—'}</span>
                       <span className="text-gray-500">Hours Run</span>
                       <span className="text-gray-900 text-right">{r.hours_run}</span>
@@ -151,7 +151,7 @@ export function CustomerReports() {
                   <thead>
                     <tr className="border-b border-gray-100 text-left">
                       <th className="px-4 py-3 font-medium text-gray-600">Report Date</th>
-                      <th className="px-4 py-3 font-medium text-gray-600">FOB</th>
+                      <th className="px-4 py-3 font-medium text-gray-600">FAB</th>
                       <th className="px-4 py-3 font-medium text-gray-600">Hours Run</th>
                       <th className="px-4 py-3 font-medium text-gray-600">Subtotal</th>
                       <th className="px-4 py-3 font-medium text-gray-600">Grand Total</th>

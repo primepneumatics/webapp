@@ -93,7 +93,7 @@ export function ReportView() {
             <InfoRow label="GST" value={report.customer.gst} />
             <InfoRow label="Model" value={report.customer.model} />
             <InfoRow label="Report Date" value={toDisplayDate(report.report_date)} />
-            <InfoRow label="FOB Number" value={report.fob} />
+            <InfoRow label="FAB Number" value={report.fob} />
             <InfoRow label="Hours Run" value={String(report.hours_run)} />
             <InfoRow label="Hours Until Next" value={String(report.hours_until_next)} />
             <InfoRow label="Next Service Date" value={toDisplayDate(report.next_service_date)} />
