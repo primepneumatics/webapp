@@ -17,6 +17,7 @@ export function InviteUser() {
   const navigate = useNavigate()
   const { isAdmin, loading, session } = useAuth()
   const [phone, setPhone] = useState('')
+  const [name, setName] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [users, setUsers] = useState<Profile[]>([])
@@ -77,6 +78,7 @@ export function InviteUser() {
       id: data.user.id,
       phone: normalizedPhone,
       role: 'user',
+      ...(name.trim() ? { name: name.trim() } : {}),
     })
 
     if (profileError) {
@@ -88,6 +90,7 @@ export function InviteUser() {
 
     setUsers(prev => [newProfile, ...prev])
     setPhone('')
+    setName('')
     window.open(buildInviteLink(normalizedPhone, password), '_blank')
     setSaving(false)
   }
@@ -135,6 +138,16 @@ export function InviteUser() {
           </p>
 
           <form onSubmit={handleInvite} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+              <input
+                type="text"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                placeholder="Staff member's name"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
               <input
