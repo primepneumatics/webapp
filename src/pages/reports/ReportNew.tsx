@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { Layout } from '../../components/Layout'
 import { calcNextServiceDate, toISODate, toDisplayDate, today } from '../../utils/dateEngine'
+import { useAuth } from '../../hooks/useAuth'
 
 
 type SparePart = { id: string; code: string; name: string; price_per_unit: number }
@@ -14,6 +15,7 @@ type SelectedService = { id: string; code: string; name: string; price: number }
 export function ReportNew() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { session } = useAuth()
   const [customerName, setCustomerName] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -119,6 +121,7 @@ export function ReportNew() {
         total_amount: finalTotal,
         spares_cost: autoTotal,
         next_service_date: toISODate(nextServiceDate),
+        filed_by_id: session?.user.id ?? null,
       })
       .select('id')
       .single()

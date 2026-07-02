@@ -3,7 +3,6 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { toDisplayDate } from '../../utils/dateEngine'
 import { Layout } from '../../components/Layout'
-import { useAuth } from '../../hooks/useAuth'
 
 const CHECKLIST_LABELS: Record<string, string> = {
   air_filter: 'Replaced air filter',
@@ -31,19 +30,19 @@ type Report = {
   selected_spares: SelectedSpare[]
   selected_services: SelectedService[]
   customer: { name: string; org: string; phone: string; gst: string; model: string }
+  filed_by: { name: string | null; phone: string } | null
 }
 
 export function ReportView() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { phone: userPhone, name: userName } = useAuth()
   const [report, setReport] = useState<Report | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     supabase
       .from('service_reports')
-      .select('*, customer:customers(name, org, phone, gst, model)')
+      .select('*, customer:customers(name, org, phone, gst, model), filed_by:profiles(name, phone)')
       .eq('id', id)
       .single()
       .then(({ data }) => {
@@ -196,7 +195,7 @@ export function ReportView() {
           )}
 
           <div className="border-t border-gray-100 pt-4 text-xs text-gray-400">
-            Filed by: {userName ?? userPhone ?? 'Unknown'} on {toDisplayDate(report.report_date)}
+            Filed by: {report.filed_by?.name ?? report.filed_by?.phone ?? 'Unknown'} on {toDisplayDate(report.report_date)}
           </div>
         </div>
       </div>
