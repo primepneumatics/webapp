@@ -7,6 +7,7 @@ import { DEFAULT_REMINDER_TEMPLATE, buildReminderMessage, buildReminderLink } fr
 import { normalizePhone } from '../utils/whatsapp'
 import { srNum } from '../utils/reportNumber'
 import { useAuth } from '../hooks/useAuth'
+import { DownloadDropdown } from '../components/DownloadDropdown'
 
 type DueService = {
   id: string
@@ -173,12 +174,18 @@ export function Dashboard() {
                   >
                     Call
                   </a>
-                  <Link
-                    to={`/reports/${s.id}`}
-                    className="flex-1 py-2 bg-blue-50 text-blue-700 rounded-lg text-xs font-semibold text-center"
-                  >
-                    {isOwn ? 'View' : 'Download'}
-                  </Link>
+                  {isOwn ? (
+                    <Link
+                      to={`/reports/${s.id}`}
+                      className="flex-1 py-2 bg-blue-50 text-blue-700 rounded-lg text-xs font-semibold text-center"
+                    >
+                      View
+                    </Link>
+                  ) : (
+                    <div className="flex-1 flex justify-center">
+                      <DownloadDropdown reportId={s.id} />
+                    </div>
+                  )}
                   <a
                     href={reminderLink}
                     target="_blank"

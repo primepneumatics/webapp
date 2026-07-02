@@ -5,6 +5,7 @@ import { Layout } from '../../components/Layout'
 import { toDisplayDate, today } from '../../utils/dateEngine'
 import { srNum, parseReportNumber } from '../../utils/reportNumber'
 import { useAuth } from '../../hooks/useAuth'
+import { DownloadDropdown } from '../../components/DownloadDropdown'
 
 type Result = {
   id: string
@@ -182,7 +183,7 @@ export function SearchReports() {
               <p className="text-xs text-gray-400 px-1 mb-2">{results.length} report{results.length !== 1 ? 's' : ''} found</p>
               {results.map(r => {
                 const isOwn = isAdmin || r.filed_by_id === session?.user.id
-                return (
+                return isOwn ? (
                   <Link key={r.id} to={`/reports/${r.id}`}
                     className="flex items-center justify-between bg-white border border-gray-200 rounded-xl px-4 py-3.5 hover:bg-gray-50 active:bg-gray-100">
                     <div>
@@ -191,11 +192,20 @@ export function SearchReports() {
                     </div>
                     <div className="flex items-center gap-3">
                       <span className="text-xs font-mono font-semibold text-gray-600">{srNum(r.report_number)}</span>
-                      <span className={`text-xs font-medium ${isOwn ? 'text-blue-600' : 'text-gray-500'}`}>
-                        {isOwn ? 'View' : 'Download'} ›
-                      </span>
+                      <span className="text-xs font-medium text-blue-600">View ›</span>
                     </div>
                   </Link>
+                ) : (
+                  <div key={r.id} className="flex items-center justify-between bg-white border border-gray-200 rounded-xl px-4 py-3.5">
+                    <div>
+                      <p className="text-sm font-medium text-gray-900">{r.customer.name}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">{toDisplayDate(r.report_date)}</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-xs font-mono font-semibold text-gray-600">{srNum(r.report_number)}</span>
+                      <DownloadDropdown reportId={r.id} />
+                    </div>
+                  </div>
                 )
               })}
             </div>
