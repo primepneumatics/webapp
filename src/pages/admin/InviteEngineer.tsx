@@ -18,28 +18,29 @@ async function callAdminApi(accessToken: string | undefined, body: Record<string
 
 type Profile = {
   id: string
+  name: string | null
   phone: string
   role: string
   created_at: string
 }
 
-export function InviteUser() {
+export function InviteEngineer() {
   const navigate = useNavigate()
   const { isAdmin, loading, session } = useAuth()
   const [phone, setPhone] = useState('')
   const [name, setName] = useState('')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
-  const [users, setUsers] = useState<Profile[]>([])
+  const [engineers, setEngineers] = useState<Profile[]>([])
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [resettingId, setResettingId] = useState<string | null>(null)
 
   useEffect(() => {
     supabase
       .from('profiles')
-      .select('id, phone, role, created_at')
+      .select('id, name, phone, role, created_at')
       .order('created_at', { ascending: false })
-      .then(({ data }) => { if (data) setUsers(data) })
+      .then(({ data }) => { if (data) setEngineers(data) })
   }, [])
 
   if (loading) return null
@@ -59,7 +60,7 @@ export function InviteUser() {
       .maybeSingle()
 
     if (existing) {
-      setError('A user with this phone number already exists.')
+      setError('An engineer with this phone number already exists.')
       setSaving(false)
       return
     }
@@ -71,30 +72,31 @@ export function InviteUser() {
         name,
       })
 
-      const newProfile: Profile = {
+      const newEngineer: Profile = {
         id,
+        name: name.trim() || null,
         phone: normalizedPhone,
-        role: 'user',
+        role: 'engineer',
         created_at: new Date().toISOString(),
       }
 
-      setUsers(prev => [newProfile, ...prev])
+      setEngineers(prev => [newEngineer, ...prev])
       setPhone('')
       setName('')
       window.open(buildInviteLink(normalizedPhone, password), '_blank')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create user.')
+      setError(err instanceof Error ? err.message : 'Failed to create engineer.')
     } finally {
       setSaving(false)
     }
   }
 
-  async function handleResetPassword(user: Profile) {
-    if (!window.confirm(`Reset password for ${user.phone}? A new password will be generated and WhatsApp will open.`)) return
-    setResettingId(user.id)
+  async function handleResetPassword(engineer: Profile) {
+    if (!window.confirm(`Reset password for ${engineer.name || engineer.phone}? A new password will be generated and WhatsApp will open.`)) return
+    setResettingId(engineer.id)
     try {
-      const { password } = await callAdminApi(session?.access_token, { action: 'resetPassword', userId: user.id })
-      window.open(buildInviteLink(user.phone, password), '_blank')
+      const { password } = await callAdminApi(session?.access_token, { action: 'resetPassword', userId: engineer.id })
+      window.open(buildInviteLink(engineer.phone, password), '_blank')
     } catch {
       alert('Failed to reset password. Please try again.')
     } finally {
@@ -102,18 +104,18 @@ export function InviteUser() {
     }
   }
 
-  async function handleDelete(user: Profile) {
-    if (user.id === session?.user.id) {
+  async function handleDelete(engineer: Profile) {
+    if (engineer.id === session?.user.id) {
       alert('You cannot delete your own account.')
       return
     }
-    if (!window.confirm(`Delete user ${user.phone}? This will revoke their access immediately.`)) return
-    setDeletingId(user.id)
+    if (!window.confirm(`Delete engineer ${engineer.name || engineer.phone}? This will revoke their access immediately.`)) return
+    setDeletingId(engineer.id)
     try {
-      await callAdminApi(session?.access_token, { action: 'deleteUser', userId: user.id })
-      setUsers(prev => prev.filter(u => u.id !== user.id))
+      await callAdminApi(session?.access_token, { action: 'deleteUser', userId: engineer.id })
+      setEngineers(prev => prev.filter(eng => eng.id !== engineer.id))
     } catch {
-      alert('Failed to delete user. Please try again.')
+      alert('Failed to delete engineer. Please try again.')
     } finally {
       setDeletingId(null)
     }
@@ -126,12 +128,12 @@ export function InviteUser() {
           <button onClick={() => navigate(-1)} className="text-gray-400 hover:text-gray-600">
             ← Back
           </button>
-          <h2 className="text-xl font-semibold text-gray-900">Invite User</h2>
+          <h2 className="text-xl font-semibold text-gray-900">Invite Engineer</h2>
         </div>
 
         <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
           <p className="text-sm text-gray-500 mb-6">
-            Enter the new user's phone number. A password will be generated and WhatsApp will open
+            Enter the new engineer's phone number. A password will be generated and WhatsApp will open
             so you can send their login credentials.
           </p>
 
@@ -142,7 +144,7 @@ export function InviteUser() {
                 type="text"
                 value={name}
                 onChange={e => setName(e.target.value)}
-                placeholder="Staff member's name"
+                placeholder="Engineer's name"
                 className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -172,43 +174,46 @@ export function InviteUser() {
         </div>
 
         <div>
-          <h3 className="text-sm font-semibold text-gray-700 mb-3">Users ({users.length})</h3>
-          {users.length === 0 ? (
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">Engineers ({engineers.length})</h3>
+          {engineers.length === 0 ? (
             <div className="bg-white border border-gray-200 rounded-xl p-8 text-center">
-              <p className="text-sm text-gray-400">No users yet.</p>
+              <p className="text-sm text-gray-400">No engineers yet.</p>
             </div>
           ) : (
             <div className="space-y-2">
-              {users.map(u => (
-                <div key={u.id} className="bg-white border border-gray-200 rounded-xl p-4 flex items-center justify-between gap-3">
+              {engineers.map(engineer => (
+                <div key={engineer.id} className="bg-white border border-gray-200 rounded-xl p-4 flex items-center justify-between gap-3">
                   <div className="min-w-0">
                     <div className="flex items-center gap-2 mb-0.5">
-                      <span className="text-sm font-medium text-gray-900">{u.phone}</span>
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
-                        u.role === 'admin' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'
+                      <span className="text-sm font-semibold text-gray-900 truncate">
+                        {engineer.name || engineer.phone}
+                      </span>
+                      <span className={`shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
+                        engineer.role === 'admin' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'
                       }`}>
-                        {u.role}
+                        {engineer.role}
                       </span>
                     </div>
-                    <p className="text-xs text-gray-400">
-                      Added {new Date(u.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                    {engineer.name && <p className="text-xs text-gray-500">{engineer.phone}</p>}
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      Added {new Date(engineer.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </p>
                   </div>
                   <div className="flex gap-3 shrink-0">
                     <button
-                      onClick={() => handleResetPassword(u)}
-                      disabled={resettingId === u.id}
+                      onClick={() => handleResetPassword(engineer)}
+                      disabled={resettingId === engineer.id}
                       className="text-xs text-blue-600 hover:underline disabled:opacity-50"
                     >
-                      {resettingId === u.id ? 'Resetting...' : 'Reset Password'}
+                      {resettingId === engineer.id ? 'Resetting...' : 'Reset Password'}
                     </button>
-                    {u.id !== session?.user.id && (
+                    {engineer.id !== session?.user.id && (
                       <button
-                        onClick={() => handleDelete(u)}
-                        disabled={deletingId === u.id}
+                        onClick={() => handleDelete(engineer)}
+                        disabled={deletingId === engineer.id}
                         className="text-xs text-red-500 hover:underline disabled:opacity-50"
                       >
-                        {deletingId === u.id ? 'Deleting...' : 'Delete'}
+                        {deletingId === engineer.id ? 'Deleting...' : 'Delete'}
                       </button>
                     )}
                   </div>

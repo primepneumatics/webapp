@@ -20,7 +20,7 @@ export function More() {
       <div className="space-y-4">
         <div className="bg-white border border-gray-200 rounded-xl p-4">
           <p className="font-semibold text-gray-900 text-sm">{displayName}</p>
-          <p className="text-xs text-gray-400 mt-0.5 capitalize">{role ?? 'user'}</p>
+          <p className="text-xs text-gray-400 mt-0.5 capitalize">{role ?? 'engineer'}</p>
         </div>
 
         <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
@@ -31,7 +31,7 @@ export function More() {
           <div>
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1 mb-2">Admin</p>
             <div className="bg-white border border-gray-200 rounded-xl overflow-hidden divide-y divide-gray-100">
-              <MenuItem label="Invite User" onClick={() => navigate('/admin/invite')} />
+              <MenuItem label="Invite Engineer" onClick={() => navigate('/admin/invite')} />
               <MenuItem label="Spare Parts" onClick={() => navigate('/admin/spare-parts')} />
               <MenuItem label="Service Types" onClick={() => navigate('/admin/service-types')} />
               <MenuItem label="Settings" onClick={() => navigate('/admin/settings')} />
