@@ -27,6 +27,30 @@ type Report = {
   filed_by: { name: string | null; phone: string } | null
 }
 
+function printNoRates() {
+  const style = document.createElement('style')
+  style.textContent = '.rates-col { display: none !important; }'
+  document.head.appendChild(style)
+
+  let cleaned = false
+  function cleanup() {
+    if (cleaned) return
+    cleaned = true
+    style.remove()
+    window.removeEventListener('afterprint', cleanup)
+  }
+
+  // window.print() blocks on desktop but not on most mobile browsers, so
+  // removing the style right after calling it (as we used to) stripped the
+  // hidden-rates style before the print sheet ever rendered on mobile.
+  // afterprint fires once printing is actually done on both, with a
+  // fallback timeout in case a mobile browser never fires it.
+  window.addEventListener('afterprint', cleanup)
+  setTimeout(cleanup, 60000)
+
+  window.print()
+}
+
 export function ReportView() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -212,14 +236,7 @@ export function ReportView() {
                     Full Report
                   </button>
                   <button
-                    onClick={() => {
-                      setPrintOpen(false)
-                      const style = document.createElement('style')
-                      style.textContent = '.rates-col { display: none !important; }'
-                      document.head.appendChild(style)
-                      window.print()
-                      document.head.removeChild(style)
-                    }}
+                    onClick={() => { setPrintOpen(false); printNoRates() }}
                     className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 border-t border-gray-100"
                   >
                     No Rates
