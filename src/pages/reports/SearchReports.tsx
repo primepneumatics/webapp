@@ -4,8 +4,6 @@ import { supabase } from '../../lib/supabase'
 import { Layout } from '../../components/Layout'
 import { toDisplayDate, today } from '../../utils/dateEngine'
 import { srNum, parseReportNumber } from '../../utils/reportNumber'
-import { useAuth } from '../../hooks/useAuth'
-import { DownloadDropdown } from '../../components/DownloadDropdown'
 
 type Result = {
   id: string
@@ -18,7 +16,6 @@ type Result = {
 type Tab = 'customer' | 'report_no' | 'date'
 
 export function SearchReports() {
-  const { isAdmin, session } = useAuth()
   const [tab, setTab] = useState<Tab>('customer')
   const [customerQuery, setCustomerQuery] = useState('')
   const [reportNoQuery, setReportNoQuery] = useState('')
@@ -40,13 +37,11 @@ export function SearchReports() {
       const { data: customers } = await supabase
         .from('customers').select('id').ilike('name', `%${q}%`)
       if (customers && customers.length > 0) {
-        let query = supabase
+        const { data } = await supabase
           .from('service_reports')
           .select('id, report_number, filed_by_id, report_date, customer:customers(name)')
           .in('customer_id', customers.map(c => c.id))
           .order('report_number', { ascending: false })
-        if (!isAdmin && session) query = query.eq('filed_by_id', session.user.id)
-        const { data } = await query
         setResults((data as unknown as Result[]) ?? [])
       }
     }
@@ -68,7 +63,6 @@ export function SearchReports() {
         .order('report_number', { ascending: false })
       if (dateFrom) query = query.gte('report_date', dateFrom)
       if (dateTo) query = query.lte('report_date', dateTo)
-      if (!isAdmin && session) query = query.eq('filed_by_id', session.user.id)
       const { data } = await query
       setResults((data as unknown as Result[]) ?? [])
     }
@@ -181,33 +175,19 @@ export function SearchReports() {
           ) : (
             <div className="space-y-2">
               <p className="text-xs text-gray-400 px-1 mb-2">{results.length} report{results.length !== 1 ? 's' : ''} found</p>
-              {results.map(r => {
-                const isOwn = isAdmin || r.filed_by_id === session?.user.id
-                return isOwn ? (
-                  <Link key={r.id} to={`/reports/${r.id}`}
-                    className="flex items-center justify-between bg-white border border-gray-200 rounded-xl px-4 py-3.5 hover:bg-gray-50 active:bg-gray-100">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{r.customer.name}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">{toDisplayDate(r.report_date)}</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs font-mono font-semibold text-gray-600">{srNum(r.report_number)}</span>
-                      <span className="text-xs font-medium text-blue-600">View ›</span>
-                    </div>
-                  </Link>
-                ) : (
-                  <div key={r.id} className="flex items-center justify-between bg-white border border-gray-200 rounded-xl px-4 py-3.5">
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{r.customer.name}</p>
-                      <p className="text-xs text-gray-400 mt-0.5">{toDisplayDate(r.report_date)}</p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs font-mono font-semibold text-gray-600">{srNum(r.report_number)}</span>
-                      <DownloadDropdown reportId={r.id} />
-                    </div>
+              {results.map(r => (
+                <Link key={r.id} to={`/reports/${r.id}`}
+                  className="flex items-center justify-between bg-white border border-gray-200 rounded-xl px-4 py-3.5 hover:bg-gray-50 active:bg-gray-100">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">{r.customer.name}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{toDisplayDate(r.report_date)}</p>
                   </div>
-                )
-              })}
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs font-mono font-semibold text-gray-600">{srNum(r.report_number)}</span>
+                    <span className="text-xs font-medium text-blue-600">View ›</span>
+                  </div>
+                </Link>
+              ))}
             </div>
           )
         )}

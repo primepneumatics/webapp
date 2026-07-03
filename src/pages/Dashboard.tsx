@@ -7,7 +7,6 @@ import { DEFAULT_REMINDER_TEMPLATE, buildReminderMessage, buildReminderLink } fr
 import { normalizePhone } from '../utils/whatsapp'
 import { srNum } from '../utils/reportNumber'
 import { useAuth } from '../hooks/useAuth'
-import { DownloadDropdown } from '../components/DownloadDropdown'
 
 type DueService = {
   id: string
@@ -27,7 +26,7 @@ type DueService = {
 type Tab = 'week' | 'pastdue'
 
 export function Dashboard() {
-  const { isAdmin, session } = useAuth()
+  const { isAdmin, session, loading: authLoading } = useAuth()
   const [tab, setTab] = useState<Tab>('week')
   const [weekServices, setWeekServices] = useState<DueService[]>([])
   const [pastServices, setPastServices] = useState<DueService[]>([])
@@ -35,26 +34,37 @@ export function Dashboard() {
   const [template, setTemplate] = useState(DEFAULT_REMINDER_TEMPLATE)
 
   useEffect(() => {
+    if (authLoading || !session) return
+
     async function load() {
+      if (!session) return
       const weekStart = toISODate(startOfWeek())
       const weekEnd = toISODate(endOfWeek())
       const ninetyDaysAgo = new Date()
       ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90)
       const ninetyDaysAgoStr = toISODate(ninetyDaysAgo)
 
+      let weekQuery = supabase
+        .from('service_reports')
+        .select('id, report_number, filed_by_id, next_service_date, report_date, fab, customer:customers(id, name, phone, model)')
+        .gte('next_service_date', weekStart)
+        .lte('next_service_date', weekEnd)
+        .order('next_service_date', { ascending: true })
+      let pastQuery = supabase
+        .from('service_reports')
+        .select('id, report_number, filed_by_id, next_service_date, report_date, fab, customer:customers(id, name, phone, model)')
+        .gte('next_service_date', ninetyDaysAgoStr)
+        .lt('next_service_date', weekStart)
+        .order('next_service_date', { ascending: false })
+
+      if (!isAdmin) {
+        weekQuery = weekQuery.eq('filed_by_id', session.user.id)
+        pastQuery = pastQuery.eq('filed_by_id', session.user.id)
+      }
+
       const [{ data: weekData }, { data: pastData }, { data: settingData }] = await Promise.all([
-        supabase
-          .from('service_reports')
-          .select('id, report_number, filed_by_id, next_service_date, report_date, fab, customer:customers(id, name, phone, model)')
-          .gte('next_service_date', weekStart)
-          .lte('next_service_date', weekEnd)
-          .order('next_service_date', { ascending: true }),
-        supabase
-          .from('service_reports')
-          .select('id, report_number, filed_by_id, next_service_date, report_date, fab, customer:customers(id, name, phone, model)')
-          .gte('next_service_date', ninetyDaysAgoStr)
-          .lt('next_service_date', weekStart)
-          .order('next_service_date', { ascending: false }),
+        weekQuery,
+        pastQuery,
         supabase
           .from('settings')
           .select('value')
@@ -68,7 +78,7 @@ export function Dashboard() {
       setLoading(false)
     }
     load()
-  }, [])
+  }, [authLoading, isAdmin, session])
 
   const todayStr = today()
   const services = tab === 'week' ? weekServices : pastServices
@@ -141,8 +151,6 @@ export function Dashboard() {
             })
             const reminderLink = buildReminderLink(normalizePhone(s.customer.phone), message)
 
-            const isOwn = isAdmin || s.filed_by_id === session?.user.id
-
             return (
               <div key={s.id} className="bg-white border border-gray-200 rounded-xl p-4">
                 <div className="flex items-start justify-between mb-1">
@@ -174,18 +182,12 @@ export function Dashboard() {
                   >
                     Call
                   </a>
-                  {isOwn ? (
-                    <Link
-                      to={`/reports/${s.id}`}
-                      className="flex-1 py-2 bg-blue-50 text-blue-700 rounded-lg text-xs font-semibold text-center"
-                    >
-                      View
-                    </Link>
-                  ) : (
-                    <div className="flex-1 flex justify-center">
-                      <DownloadDropdown reportId={s.id} />
-                    </div>
-                  )}
+                  <Link
+                    to={`/reports/${s.id}`}
+                    className="flex-1 py-2 bg-blue-50 text-blue-700 rounded-lg text-xs font-semibold text-center"
+                  >
+                    View
+                  </Link>
                   <a
                     href={reminderLink}
                     target="_blank"
