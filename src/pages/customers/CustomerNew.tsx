@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase'
 import { Layout } from '../../components/Layout'
 
 type SparePart = { id: string; code: string; name: string }
+type Engineer = { id: string; name: string | null; phone: string }
 
 export function CustomerNew() {
   const navigate = useNavigate()
@@ -12,6 +13,8 @@ export function CustomerNew() {
   const [gstError, setGstError] = useState('')
   const [spareParts, setSpareParts] = useState<SparePart[]>([])
   const [selectedSpareIds, setSelectedSpareIds] = useState<string[]>([])
+  const [engineers, setEngineers] = useState<Engineer[]>([])
+  const [assignedEngineerId, setAssignedEngineerId] = useState('')
 
   const [form, setForm] = useState({
     gst: '', name: '', org: '', address: '', phone: '', model: '',
@@ -20,6 +23,9 @@ export function CustomerNew() {
   useEffect(() => {
     supabase.from('spare_parts').select('id, code, name').order('code').then(({ data }) => {
       if (data) setSpareParts(data)
+    })
+    supabase.from('profiles').select('id, name, phone').eq('role', 'engineer').order('name').then(({ data }) => {
+      if (data) setEngineers(data)
     })
   }, [])
 
@@ -48,7 +54,11 @@ export function CustomerNew() {
 
     const { data, error } = await supabase
       .from('customers')
-      .insert({ ...form, spare_part_ids: selectedSpareIds })
+      .insert({
+        ...form,
+        spare_part_ids: selectedSpareIds,
+        assigned_engineer_id: assignedEngineerId || null,
+      })
       .select('id')
       .single()
 
@@ -75,6 +85,21 @@ export function CustomerNew() {
           <Field label="Address" value={form.address} onChange={set('address')} textarea />
           <Field label="Phone Number *" value={form.phone} onChange={set('phone')} type="tel" required autoComplete="tel" />
           <Field label="Model Number" value={form.model} onChange={set('model')} autoComplete="off" />
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Assign Engineer</label>
+            <select
+              value={assignedEngineerId}
+              onChange={e => setAssignedEngineerId(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Unassigned</option>
+              {engineers.map(eng => (
+                <option key={eng.id} value={eng.id}>{eng.name || eng.phone}</option>
+              ))}
+            </select>
+            <p className="text-xs text-gray-400 mt-1">The assigned engineer will see this customer in their Customers list.</p>
+          </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Spares Required</label>

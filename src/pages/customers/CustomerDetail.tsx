@@ -13,6 +13,7 @@ type Customer = {
   phone: string
   model: string
   spare_part_ids: string[]
+  assigned_engineer: { name: string | null; phone: string } | null
 }
 
 type SparePart = { id: string; code: string; name: string }
@@ -28,13 +29,13 @@ export function CustomerDetail() {
   useEffect(() => {
     supabase
       .from('customers')
-      .select('*')
+      .select('*, assigned_engineer:profiles!assigned_engineer_id(name, phone)')
       .eq('id', id)
       .single()
       .then(({ data }) => {
         setCustomer(data)
         const ids: string[] = data?.spare_part_ids ?? []
-        if (ids.length > 0) {
+        if (isAdmin && ids.length > 0) {
           supabase
             .from('spare_parts')
             .select('id, code, name')
@@ -46,7 +47,7 @@ export function CustomerDetail() {
         }
         setLoading(false)
       })
-  }, [id])
+  }, [id, isAdmin])
 
   if (loading) return <Layout><p className="text-gray-400 text-sm">Loading...</p></Layout>
   if (!customer) return <Layout><p className="text-red-500 text-sm">Customer not found.</p></Layout>
@@ -55,32 +56,37 @@ export function CustomerDetail() {
     <Layout>
       <div className="max-w-xl">
         <div className="flex items-center gap-3 mb-6">
-          <button onClick={() => navigate('/customers')} className="text-gray-400 hover:text-gray-600">
+          <button onClick={() => navigate(-1)} className="text-gray-400 hover:text-gray-600">
             ← Back
           </button>
           <h2 className="text-xl font-semibold text-gray-900">{customer.name}</h2>
         </div>
 
         <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4 mb-4">
-          <Row label="GST Number" value={customer.gst} />
           <Row label="Organisation" value={customer.org} />
           <Row label="Address" value={customer.address} />
-          <Row label="Phone" value={customer.phone} />
-          <Row label="Model Number" value={customer.model} />
-          <div className="flex gap-4">
-            <span className="text-sm text-gray-500 w-36 shrink-0">Spares Required</span>
-            {spares.length === 0 ? (
-              <span className="text-sm text-gray-900">—</span>
-            ) : (
-              <div className="flex flex-wrap gap-1.5">
-                {spares.map(p => (
-                  <span key={p.id} className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-xs">
-                    <span className="font-mono text-gray-400">{p.code}</span> {p.name}
-                  </span>
-                ))}
+          {isAdmin && (
+            <>
+              <Row label="GST Number" value={customer.gst} />
+              <Row label="Phone" value={customer.phone} />
+              <Row label="Model Number" value={customer.model} />
+              <Row label="Assigned Engineer" value={customer.assigned_engineer?.name || customer.assigned_engineer?.phone || 'Unassigned'} />
+              <div className="flex gap-4">
+                <span className="text-sm text-gray-500 w-36 shrink-0">Spares Required</span>
+                {spares.length === 0 ? (
+                  <span className="text-sm text-gray-900">—</span>
+                ) : (
+                  <div className="flex flex-wrap gap-1.5">
+                    {spares.map(p => (
+                      <span key={p.id} className="inline-flex items-center gap-1 px-2 py-0.5 bg-gray-100 text-gray-700 rounded text-xs">
+                        <span className="font-mono text-gray-400">{p.code}</span> {p.name}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </>
+          )}
         </div>
 
         <div className="flex gap-3 mb-3">

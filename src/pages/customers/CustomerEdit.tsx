@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase'
 import { Layout } from '../../components/Layout'
 
 type SparePart = { id: string; code: string; name: string }
+type Engineer = { id: string; name: string | null; phone: string }
 type Form = { gst: string; name: string; org: string; address: string; phone: string; model: string }
 
 export function CustomerEdit() {
@@ -12,6 +13,8 @@ export function CustomerEdit() {
   const [form, setForm] = useState<Form>({ gst: '', name: '', org: '', address: '', phone: '', model: '' })
   const [spareParts, setSpareParts] = useState<SparePart[]>([])
   const [selectedSpareIds, setSelectedSpareIds] = useState<string[]>([])
+  const [engineers, setEngineers] = useState<Engineer[]>([])
+  const [assignedEngineerId, setAssignedEngineerId] = useState('')
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -21,12 +24,15 @@ export function CustomerEdit() {
     Promise.all([
       supabase.from('customers').select('*').eq('id', id).single(),
       supabase.from('spare_parts').select('id, code, name').order('code'),
-    ]).then(([{ data: customer }, { data: parts }]) => {
+      supabase.from('profiles').select('id, name, phone').eq('role', 'engineer').order('name'),
+    ]).then(([{ data: customer }, { data: parts }, { data: engs }]) => {
       if (customer) {
         setForm({ gst: customer.gst || '', name: customer.name || '', org: customer.org || '', address: customer.address || '', phone: customer.phone || '', model: customer.model || '' })
         setSelectedSpareIds(customer.spare_part_ids ?? [])
+        setAssignedEngineerId(customer.assigned_engineer_id ?? '')
       }
       if (parts) setSpareParts(parts)
+      if (engs) setEngineers(engs)
       setLoading(false)
     })
   }, [id])
@@ -56,7 +62,12 @@ export function CustomerEdit() {
 
     const { error } = await supabase
       .from('customers')
-      .update({ ...form, spare_part_ids: selectedSpareIds, updated_at: new Date().toISOString() })
+      .update({
+        ...form,
+        spare_part_ids: selectedSpareIds,
+        assigned_engineer_id: assignedEngineerId || null,
+        updated_at: new Date().toISOString(),
+      })
       .eq('id', id)
 
     if (error) {
@@ -84,6 +95,21 @@ export function CustomerEdit() {
           <Field label="Address" value={form.address} onChange={set('address')} textarea />
           <Field label="Phone Number *" value={form.phone} onChange={set('phone')} type="tel" required autoComplete="tel" />
           <Field label="Model Number" value={form.model} onChange={set('model')} autoComplete="off" />
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Assign Engineer</label>
+            <select
+              value={assignedEngineerId}
+              onChange={e => setAssignedEngineerId(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">Unassigned</option>
+              {engineers.map(eng => (
+                <option key={eng.id} value={eng.id}>{eng.name || eng.phone}</option>
+              ))}
+            </select>
+            <p className="text-xs text-gray-400 mt-1">The assigned engineer will see this customer in their Customers list.</p>
+          </div>
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Spares Required</label>

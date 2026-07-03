@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { Layout } from '../../components/Layout'
+import { useAuth } from '../../hooks/useAuth'
 
 type Customer = {
   id: string
@@ -9,24 +10,32 @@ type Customer = {
   org: string
   phone: string
   model: string
+  assigned_engineer_id: string | null
+  assigned_engineer: { name: string | null; phone: string } | null
 }
 
 export function CustomerList() {
   const navigate = useNavigate()
+  const { isAdmin, session, loading: authLoading } = useAuth()
   const [customers, setCustomers] = useState<Customer[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
 
   useEffect(() => {
-    supabase
+    if (authLoading || !session) return
+
+    let query = supabase
       .from('customers')
-      .select('id, name, org, phone, model')
+      .select('id, name, org, phone, model, assigned_engineer_id, assigned_engineer:profiles!assigned_engineer_id(name, phone)')
       .order('name')
-      .then(({ data }) => {
-        if (data) setCustomers(data)
-        setLoading(false)
-      })
-  }, [])
+
+    if (!isAdmin) query = query.eq('assigned_engineer_id', session.user.id)
+
+    query.then(({ data }) => {
+      if (data) setCustomers(data as unknown as Customer[])
+      setLoading(false)
+    })
+  }, [authLoading, isAdmin, session])
 
   const filtered = search.trim()
     ? customers.filter(c => {
@@ -44,12 +53,14 @@ export function CustomerList() {
     <Layout>
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold text-gray-900">Customers</h2>
-        <Link
-          to="/customers/new"
-          className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium"
-        >
-          + Add
-        </Link>
+        {isAdmin && (
+          <Link
+            to="/customers/new"
+            className="px-3 py-1.5 bg-blue-600 text-white rounded-lg text-sm font-medium"
+          >
+            + Add
+          </Link>
+        )}
       </div>
 
       <input
@@ -64,10 +75,14 @@ export function CustomerList() {
         <p className="text-gray-400 text-sm">Loading...</p>
       ) : customers.length === 0 ? (
         <div className="bg-white border border-gray-200 rounded-xl p-10 text-center">
-          <p className="text-gray-500 text-sm">No customers yet.</p>
-          <Link to="/customers/new" className="text-blue-600 text-sm mt-2 inline-block">
-            Add your first customer &rarr;
-          </Link>
+          <p className="text-gray-500 text-sm">
+            {isAdmin ? 'No customers yet.' : 'No customers assigned to you yet.'}
+          </p>
+          {isAdmin && (
+            <Link to="/customers/new" className="text-blue-600 text-sm mt-2 inline-block">
+              Add your first customer &rarr;
+            </Link>
+          )}
         </div>
       ) : filtered.length === 0 ? (
         <div className="bg-white border border-gray-200 rounded-xl p-10 text-center">
@@ -87,6 +102,15 @@ export function CustomerList() {
                 <p className="text-xs text-gray-400 mt-0.5">
                   {c.phone}{c.model ? ` · ${c.model}` : ''}
                 </p>
+                {isAdmin && (
+                  <p className="text-xs mt-1">
+                    {c.assigned_engineer ? (
+                      <span className="text-gray-500">Assigned: {c.assigned_engineer.name || c.assigned_engineer.phone}</span>
+                    ) : (
+                      <span className="text-amber-600">Unassigned</span>
+                    )}
+                  </p>
+                )}
               </div>
               <span className="text-gray-300 text-xl ml-3 shrink-0">&#8250;</span>
             </div>
