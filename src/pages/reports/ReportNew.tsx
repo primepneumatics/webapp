@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { Layout } from '../../components/Layout'
-import { calcNextServiceDate, toISODate, toDisplayDate, today } from '../../utils/dateEngine'
+import { calcNextServiceDate, addDays, toISODate, toDisplayDate, today } from '../../utils/dateEngine'
 
 
 type SparePart = { id: string; code: string; name: string; price_per_unit: number }
@@ -35,6 +35,7 @@ const [customerName, setCustomerName] = useState('')
     remarks: '',
     hours_run: '',
     hours_until_next: '',
+    maintenance_days: '',
   })
 
   useEffect(() => {
@@ -104,7 +105,11 @@ const [customerName, setCustomerName] = useState('')
     const { data: { user } } = await supabase.auth.getUser()
     const hoursUntilNext = parseFloat(form.hours_until_next)
     const reportDate = new Date(form.report_date)
-    const nextServiceDate = calcNextServiceDate(reportDate, hoursUntilNext)
+    const maintenanceDays = parseInt(form.maintenance_days, 10)
+    let nextServiceDate = calcNextServiceDate(reportDate, hoursUntilNext)
+    if (!isNaN(maintenanceDays) && maintenanceDays > 0) {
+      nextServiceDate = addDays(nextServiceDate, maintenanceDays)
+    }
 
     const { data, error } = await supabase
       .from('service_reports')
@@ -115,6 +120,7 @@ const [customerName, setCustomerName] = useState('')
         remarks: form.remarks,
         hours_run: parseFloat(form.hours_run),
         hours_until_next: hoursUntilNext,
+        maintenance_days: !isNaN(maintenanceDays) && maintenanceDays > 0 ? maintenanceDays : null,
         selected_spares: selectedSpares,
         selected_services: selectedServices,
         total_amount: finalTotal,
@@ -182,11 +188,28 @@ const [customerName, setCustomerName] = useState('')
               </div>
             </div>
 
-            {form.hours_until_next && (
-              <p className="text-xs text-blue-600">
-                Next service date: {toDisplayDate(toISODate(calcNextServiceDate(new Date(form.report_date), parseFloat(form.hours_until_next))))}
-              </p>
-            )}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Maintenance Days (optional)</label>
+              <input type="number" value={form.maintenance_days} onChange={setField('maintenance_days')} min="0"
+                placeholder="e.g. 3 or 15"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <p className="text-xs text-gray-400 mt-1">Skips this many extra days when scheduling the next service date, to align with the customer's maintenance schedule.</p>
+            </div>
+
+            {form.hours_until_next && (() => {
+              const baseDate = calcNextServiceDate(new Date(form.report_date), parseFloat(form.hours_until_next))
+              const maintenanceDays = parseInt(form.maintenance_days, 10)
+              const hasMaintenance = !isNaN(maintenanceDays) && maintenanceDays > 0
+              const finalDate = hasMaintenance ? addDays(baseDate, maintenanceDays) : baseDate
+              return (
+                <p className="text-xs text-blue-600">
+                  Next service date: {toDisplayDate(toISODate(finalDate))}
+                  {hasMaintenance && (
+                    <span className="text-gray-400"> (base {toDisplayDate(toISODate(baseDate))} + {maintenanceDays}d maintenance)</span>
+                  )}
+                </p>
+              )
+            })()}
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Remarks</label>

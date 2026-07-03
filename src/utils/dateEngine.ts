@@ -5,6 +5,12 @@ export function calcNextServiceDate(reportDate: Date, hoursUntilNext: number): D
   return next
 }
 
+export function addDays(date: Date, days: number): Date {
+  const next = new Date(date)
+  next.setDate(next.getDate() + days)
+  return next
+}
+
 export function toISODate(date: Date): string {
   return date.toISOString().split('T')[0]
 }
