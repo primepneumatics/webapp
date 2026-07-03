@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node'
 import { createClient } from '@supabase/supabase-js'
-import { generatePassword, toAuthEmail } from '../src/utils/whatsapp'
+import { generatePassword, toAuthEmail } from '../src/utils/whatsapp.js'
 
 const url = process.env.VITE_SUPABASE_URL as string
 const anonKey = process.env.VITE_SUPABASE_ANON_KEY as string
