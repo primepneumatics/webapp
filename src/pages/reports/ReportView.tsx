@@ -5,15 +5,6 @@ import { toDisplayDate } from '../../utils/dateEngine'
 import { srNum } from '../../utils/reportNumber'
 import { Layout } from '../../components/Layout'
 
-const CHECKLIST_LABELS: Record<string, string> = {
-  air_filter: 'Replaced air filter',
-  oil_filter: 'Replaced oil filter',
-  oil_level: 'Checked / topped up oil level',
-  cooler: 'Cleaned cooler',
-  belts: 'Inspected belts / drive',
-  air_leaks: 'Checked for air leaks',
-}
-
 type SelectedSpare = { id: string; code: string; name: string; qty: number; unit_price: number; amount: number }
 type SelectedService = { id: string; code: string; name: string; price: number }
 
@@ -30,7 +21,6 @@ type Report = {
   maintenance_days: number | null
   total_amount: number
   next_service_date: string
-  checklist: Record<string, boolean>
   selected_spares: SelectedSpare[]
   selected_services: SelectedService[]
   customer: { name: string; org: string; phone: string; gst: string; model: string }
@@ -75,7 +65,7 @@ export function ReportView() {
   const grandTotal = report.total_amount ?? (sparesTotal + servicesTotal)
 
   const reportCard = (
-    <div className="bg-white p-8 print:p-0 space-y-6 print:space-y-4">
+    <div className="bg-white p-8 print:p-0 print:pb-2 space-y-6 print:space-y-4">
       <div className="border-b border-gray-100 pb-4 flex items-end justify-between">
         <div>
           <img src="/logo.png" alt="Prime Pneumatics & Consultants" className="h-10 w-auto mb-1" />
@@ -102,18 +92,6 @@ export function ReportView() {
         {report.maintenance_days != null && (
           <InfoRow label="Maintenance Days" value={String(report.maintenance_days)} />
         )}
-      </div>
-
-      <div>
-        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Service Checklist</p>
-        <div className="grid grid-cols-2 gap-2">
-          {Object.entries(report.checklist).map(([key, done]) => (
-            <div key={key} className="checklist-item flex items-center gap-2 text-sm">
-              <span className={done ? 'text-green-600' : 'text-gray-300'}>{done ? '✓' : '✗'}</span>
-              <span className={done ? 'text-gray-800' : 'text-gray-400'}>{CHECKLIST_LABELS[key] || key}</span>
-            </div>
-          ))}
-        </div>
       </div>
 
       {spares.length > 0 && (
