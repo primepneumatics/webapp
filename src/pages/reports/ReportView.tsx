@@ -205,7 +205,7 @@ export function ReportView() {
 
   return (
     <Layout>
-      <div className="max-w-2xl print:max-w-none">
+      <div className="max-w-2xl print:mx-auto">
         <div className="flex items-center justify-between mb-6 no-print">
           <div className="flex items-center gap-3">
             <button onClick={() => navigate(`/customers/${report.customer_id}`)} className="text-gray-400 hover:text-gray-600">← Back</button>
