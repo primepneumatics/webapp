@@ -75,7 +75,7 @@ export function ReportView() {
   const grandTotal = report.total_amount ?? (sparesTotal + servicesTotal)
 
   const reportCard = (
-    <div className="bg-white p-8 space-y-6">
+    <div className="bg-white p-8 print:p-0 space-y-6 print:space-y-4">
       <div className="border-b border-gray-100 pb-4 flex items-end justify-between">
         <div>
           <img src="/logo.png" alt="Prime Pneumatics & Consultants" className="h-10 w-auto mb-1" />
@@ -108,7 +108,7 @@ export function ReportView() {
         <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Service Checklist</p>
         <div className="grid grid-cols-2 gap-2">
           {Object.entries(report.checklist).map(([key, done]) => (
-            <div key={key} className="flex items-center gap-2 text-sm">
+            <div key={key} className="checklist-item flex items-center gap-2 text-sm">
               <span className={done ? 'text-green-600' : 'text-gray-300'}>{done ? '✓' : '✗'}</span>
               <span className={done ? 'text-gray-800' : 'text-gray-400'}>{CHECKLIST_LABELS[key] || key}</span>
             </div>
@@ -203,7 +203,7 @@ export function ReportView() {
 
   return (
     <Layout>
-      <div className="max-w-2xl">
+      <div className="max-w-2xl print:max-w-none">
         <div className="flex items-center justify-between mb-6 no-print">
           <div className="flex items-center gap-3">
             <button onClick={() => navigate(`/customers/${report.customer_id}`)} className="text-gray-400 hover:text-gray-600">← Back</button>
@@ -251,7 +251,7 @@ export function ReportView() {
             </div>
           </div>
         </div>
-        <div className="border border-gray-200 rounded-xl overflow-hidden">
+        <div className="border border-gray-200 rounded-xl overflow-hidden print:border-0 print:rounded-none">
           {reportCard}
         </div>
       </div>

@@ -19,6 +19,10 @@ body {
   }
 }
 
+.app-shell {
+  padding-bottom: calc(4rem + env(safe-area-inset-bottom));
+}
+
 @page {
   margin: 0;
 }
@@ -28,9 +32,21 @@ body {
     display: none !important;
   }
 
+  .app-shell {
+    padding-bottom: 0 !important;
+  }
+
   body {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
-    padding: 24px;
+    padding: 16px;
+  }
+
+  table {
+    break-inside: auto;
+  }
+
+  tr, .checklist-item {
+    break-inside: avoid;
   }
 }
