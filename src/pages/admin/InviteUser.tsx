@@ -1,10 +1,20 @@
 import { useEffect, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router-dom'
-import { supabaseAdmin } from '../../lib/supabaseAdmin'
 import { supabase } from '../../lib/supabase'
 import { Layout } from '../../components/Layout'
 import { useAuth } from '../../hooks/useAuth'
-import { generatePassword, buildInviteLink, toAuthEmail, normalizePhone } from '../../utils/whatsapp'
+import { buildInviteLink, normalizePhone } from '../../utils/whatsapp'
+
+async function callAdminApi(accessToken: string | undefined, body: Record<string, unknown>) {
+  const res = await fetch('/api/admin-users', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken ?? ''}` },
+    body: JSON.stringify(body),
+  })
+  const json = await res.json()
+  if (!res.ok) throw new Error(json.error ?? 'Request failed')
+  return json
+}
 
 type Profile = {
   id: string
@@ -40,7 +50,6 @@ export function InviteUser() {
     setError('')
     setSaving(true)
 
-    const password = generatePassword()
     const normalizedPhone = normalizePhone(phone)
 
     const { data: existing } = await supabase
@@ -55,57 +64,42 @@ export function InviteUser() {
       return
     }
 
-    const { data, error: createError } = await supabaseAdmin.auth.admin.createUser({
-      email: toAuthEmail(normalizedPhone),
-      password,
-      email_confirm: true,
-    })
+    try {
+      const { id, password } = await callAdminApi(session?.access_token, {
+        action: 'create',
+        phone: normalizedPhone,
+        name,
+      })
 
-    if (createError || !data.user) {
-      setError(createError?.message ?? 'Failed to create user.')
+      const newProfile: Profile = {
+        id,
+        phone: normalizedPhone,
+        role: 'user',
+        created_at: new Date().toISOString(),
+      }
+
+      setUsers(prev => [newProfile, ...prev])
+      setPhone('')
+      setName('')
+      window.open(buildInviteLink(normalizedPhone, password), '_blank')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to create user.')
+    } finally {
       setSaving(false)
-      return
     }
-
-    const newProfile: Profile = {
-      id: data.user.id,
-      phone: normalizedPhone,
-      role: 'user',
-      created_at: new Date().toISOString(),
-    }
-
-    const { error: profileError } = await supabase.from('profiles').insert({
-      id: data.user.id,
-      phone: normalizedPhone,
-      role: 'user',
-      ...(name.trim() ? { name: name.trim() } : {}),
-    })
-
-    if (profileError) {
-      await supabaseAdmin.auth.admin.deleteUser(data.user.id)
-      setError('Failed to create user profile. Please try again.')
-      setSaving(false)
-      return
-    }
-
-    setUsers(prev => [newProfile, ...prev])
-    setPhone('')
-    setName('')
-    window.open(buildInviteLink(normalizedPhone, password), '_blank')
-    setSaving(false)
   }
 
   async function handleResetPassword(user: Profile) {
     if (!window.confirm(`Reset password for ${user.phone}? A new password will be generated and WhatsApp will open.`)) return
     setResettingId(user.id)
-    const password = generatePassword()
-    const { error } = await supabaseAdmin.auth.admin.updateUserById(user.id, { password })
-    if (error) {
-      alert('Failed to reset password. Please try again.')
-    } else {
+    try {
+      const { password } = await callAdminApi(session?.access_token, { action: 'resetPassword', userId: user.id })
       window.open(buildInviteLink(user.phone, password), '_blank')
+    } catch {
+      alert('Failed to reset password. Please try again.')
+    } finally {
+      setResettingId(null)
     }
-    setResettingId(null)
   }
 
   async function handleDelete(user: Profile) {
@@ -115,10 +109,14 @@ export function InviteUser() {
     }
     if (!window.confirm(`Delete user ${user.phone}? This will revoke their access immediately.`)) return
     setDeletingId(user.id)
-    await supabase.from('profiles').delete().eq('id', user.id)
-    await supabaseAdmin.auth.admin.deleteUser(user.id)
-    setUsers(prev => prev.filter(u => u.id !== user.id))
-    setDeletingId(null)
+    try {
+      await callAdminApi(session?.access_token, { action: 'deleteUser', userId: user.id })
+      setUsers(prev => prev.filter(u => u.id !== user.id))
+    } catch {
+      alert('Failed to delete user. Please try again.')
+    } finally {
+      setDeletingId(null)
+    }
   }
 
   return (
