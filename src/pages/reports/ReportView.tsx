@@ -27,36 +27,13 @@ type Report = {
   filed_by: { name: string | null; phone: string } | null
 }
 
-function printNoRates() {
-  const style = document.createElement('style')
-  style.textContent = '.rates-col { display: none !important; }'
-  document.head.appendChild(style)
-
-  let cleaned = false
-  function cleanup() {
-    if (cleaned) return
-    cleaned = true
-    style.remove()
-    window.removeEventListener('afterprint', cleanup)
-  }
-
-  // window.print() blocks on desktop but not on most mobile browsers, so
-  // removing the style right after calling it (as we used to) stripped the
-  // hidden-rates style before the print sheet ever rendered on mobile.
-  // afterprint fires once printing is actually done on both, with a
-  // fallback timeout in case a mobile browser never fires it.
-  window.addEventListener('afterprint', cleanup)
-  setTimeout(cleanup, 60000)
-
-  window.print()
-}
-
 export function ReportView() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const [report, setReport] = useState<Report | null>(null)
   const [loading, setLoading] = useState(true)
   const [printOpen, setPrintOpen] = useState(false)
+  const [hideRates, setHideRates] = useState(false)
   const printRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -66,6 +43,24 @@ export function ReportView() {
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  useEffect(() => {
+    // Runs only after React has committed the hideRates change to the DOM, so
+    // window.print() always sees the already-updated (rates hidden) markup —
+    // this avoids relying on a dynamically injected <style> tag, which some
+    // mobile print/PDF pipelines don't reliably pick up.
+    if (!hideRates) return
+    window.print()
+    let cleaned = false
+    function reset() {
+      if (cleaned) return
+      cleaned = true
+      setHideRates(false)
+    }
+    window.addEventListener('afterprint', reset)
+    const fallback = setTimeout(reset, 60000)
+    return () => { window.removeEventListener('afterprint', reset); clearTimeout(fallback) }
+  }, [hideRates])
 
   useEffect(() => {
     supabase
@@ -126,8 +121,8 @@ export function ReportView() {
               <tr className="text-left text-xs text-gray-400 border-b border-gray-100">
                 <th className="pb-1">Code</th><th className="pb-1">Name</th>
                 <th className="pb-1 text-right">Qty</th>
-                <th className="pb-1 text-right rates-col">Unit Price</th>
-                <th className="pb-1 text-right rates-col">Amount</th>
+                <th className={`pb-1 text-right ${hideRates ? 'hidden' : ''}`}>Unit Price</th>
+                <th className={`pb-1 text-right ${hideRates ? 'hidden' : ''}`}>Amount</th>
               </tr>
             </thead>
             <tbody>
@@ -136,8 +131,8 @@ export function ReportView() {
                   <td className="py-1.5 font-mono text-gray-600 text-xs">{s.code}</td>
                   <td className="py-1.5 text-gray-800">{s.name}</td>
                   <td className="py-1.5 text-right text-gray-600">{s.qty}</td>
-                  <td className="py-1.5 text-right text-gray-600 rates-col">₹{s.unit_price.toFixed(2)}</td>
-                  <td className="py-1.5 text-right font-medium text-gray-900 rates-col">₹{s.amount.toFixed(2)}</td>
+                  <td className={`py-1.5 text-right text-gray-600 ${hideRates ? 'hidden' : ''}`}>₹{s.unit_price.toFixed(2)}</td>
+                  <td className={`py-1.5 text-right font-medium text-gray-900 ${hideRates ? 'hidden' : ''}`}>₹{s.amount.toFixed(2)}</td>
                 </tr>
               ))}
             </tbody>
@@ -152,7 +147,7 @@ export function ReportView() {
             <thead>
               <tr className="text-left text-xs text-gray-400 border-b border-gray-100">
                 <th className="pb-1">Code</th><th className="pb-1">Name</th>
-                <th className="pb-1 text-right rates-col">Price</th>
+                <th className={`pb-1 text-right ${hideRates ? 'hidden' : ''}`}>Price</th>
               </tr>
             </thead>
             <tbody>
@@ -160,7 +155,7 @@ export function ReportView() {
                 <tr key={s.id} className="border-b border-gray-50">
                   <td className="py-1.5 font-mono text-gray-600 text-xs">{s.code}</td>
                   <td className="py-1.5 text-gray-800">{s.name}</td>
-                  <td className="py-1.5 text-right font-medium text-gray-900 rates-col">₹{s.price.toFixed(2)}</td>
+                  <td className={`py-1.5 text-right font-medium text-gray-900 ${hideRates ? 'hidden' : ''}`}>₹{s.price.toFixed(2)}</td>
                 </tr>
               ))}
             </tbody>
@@ -168,7 +163,7 @@ export function ReportView() {
         </div>
       )}
 
-      <div className="border-t border-gray-100 pt-4 space-y-1 rates-col">
+      <div className={`border-t border-gray-100 pt-4 space-y-1 ${hideRates ? 'hidden' : ''}`}>
         {spares.length > 0 && (
           <div className="flex justify-between text-sm text-gray-500">
             <span>Spares Total</span><span>₹{sparesTotal.toFixed(2)}</span>
@@ -236,7 +231,7 @@ export function ReportView() {
                     Full Report
                   </button>
                   <button
-                    onClick={() => { setPrintOpen(false); printNoRates() }}
+                    onClick={() => { setPrintOpen(false); setHideRates(true) }}
                     className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 border-t border-gray-100"
                   >
                     No Rates
