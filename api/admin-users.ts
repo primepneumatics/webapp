@@ -29,15 +29,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return
   }
 
-  const caller = await requireAdmin(req)
-  if (!caller) {
-    res.status(403).json({ error: 'Forbidden' })
-    return
-  }
-
-  const { action, phone, name, userId } = req.body ?? {}
-
   try {
+    const caller = await requireAdmin(req)
+    if (!caller) {
+      res.status(403).json({ error: 'Forbidden' })
+      return
+    }
+
+    const { action, phone, name, userId } = req.body ?? {}
+
     if (action === 'create') {
       const password = generatePassword()
       const { data, error } = await admin.auth.admin.createUser({
@@ -90,7 +90,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     res.status(400).json({ error: 'Unknown action' })
-  } catch {
-    res.status(500).json({ error: 'Internal server error' })
+  } catch (err) {
+    res.status(500).json({ error: err instanceof Error ? err.message : 'Internal server error' })
   }
 }

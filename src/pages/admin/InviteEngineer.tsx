@@ -11,8 +11,14 @@ async function callAdminApi(accessToken: string | undefined, body: Record<string
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken ?? ''}` },
     body: JSON.stringify(body),
   })
-  const json = await res.json()
-  if (!res.ok) throw new Error(json.error ?? 'Request failed')
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let json: any
+  try {
+    json = await res.json()
+  } catch {
+    throw new Error(`Server error (${res.status}). Please try again.`)
+  }
+  if (!res.ok) throw new Error(typeof json.error === 'string' ? json.error : 'Request failed')
   return json
 }
 
