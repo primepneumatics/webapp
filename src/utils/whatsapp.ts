@@ -24,9 +24,9 @@ export function displayPhone(phone: string): string {
   return phone.startsWith('91') && phone.length === 12 ? phone.slice(2) : phone
 }
 
-export function buildInviteLink(phone: string, password: string): string {
+export function buildInviteLink(phone: string, password: string, loginUrl: string): string {
   const text = encodeURIComponent(
-    `Your Prime Pneumatics login:\nPhone: ${displayPhone(phone)}\nPassword: ${password}`
+    `Your Prime Pneumatics login:\nURL: ${loginUrl}\nPhone: ${displayPhone(phone)}\nPassword: ${password}`
   )
   return `https://wa.me/${phone}?text=${text}`
 }

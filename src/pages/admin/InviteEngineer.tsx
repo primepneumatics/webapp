@@ -89,7 +89,7 @@ export function InviteEngineer() {
       setEngineers(prev => [newEngineer, ...prev])
       setPhone('')
       setName('')
-      window.open(buildInviteLink(normalizedPhone, password), '_blank')
+      window.open(buildInviteLink(normalizedPhone, password, `${window.location.origin}/login`), '_blank')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create engineer.')
     } finally {
@@ -102,7 +102,7 @@ export function InviteEngineer() {
     setResettingId(engineer.id)
     try {
       const { password } = await callAdminApi(session?.access_token, { action: 'resetPassword', userId: engineer.id })
-      window.open(buildInviteLink(engineer.phone, password), '_blank')
+      window.open(buildInviteLink(engineer.phone, password, `${window.location.origin}/login`), '_blank')
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to reset password. Please try again.')
     } finally {
