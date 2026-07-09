@@ -11,22 +11,21 @@ import { useAuth } from '../hooks/useAuth'
 type DueService = {
   id: string
   report_number: number
-  filed_by_id: string | null
-  next_service_date: string
+  due_service_date: string
   report_date: string
-  fab: string
-  customer: {
+  service: {
     id: string
-    name: string
-    phone: string
-    model: string
+    fab_number: string
+    model_number: string | null
+    sponsor: string | null
+    customer: { name: string; phone: string }
   }
 }
 
 type Tab = 'week' | 'pastdue'
 
 export function Dashboard() {
-  const { isAdmin, session, loading: authLoading } = useAuth()
+  const { session, loading: authLoading } = useAuth()
   const [tab, setTab] = useState<Tab>('week')
   const [weekServices, setWeekServices] = useState<DueService[]>([])
   const [pastServices, setPastServices] = useState<DueService[]>([])
@@ -44,23 +43,20 @@ export function Dashboard() {
       ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90)
       const ninetyDaysAgoStr = toISODate(ninetyDaysAgo)
 
-      let weekQuery = supabase
-        .from('service_reports')
-        .select('id, report_number, filed_by_id, next_service_date, report_date, fab, customer:customers(id, name, phone, model)')
-        .gte('next_service_date', weekStart)
-        .lte('next_service_date', weekEnd)
-        .order('next_service_date', { ascending: true })
-      let pastQuery = supabase
-        .from('service_reports')
-        .select('id, report_number, filed_by_id, next_service_date, report_date, fab, customer:customers(id, name, phone, model)')
-        .gte('next_service_date', ninetyDaysAgoStr)
-        .lt('next_service_date', weekStart)
-        .order('next_service_date', { ascending: false })
+      const selectCols = 'id, report_number, due_service_date, report_date, service:services(id, fab_number, model_number, sponsor, customer:customers(name, phone))'
 
-      if (!isAdmin) {
-        weekQuery = weekQuery.eq('filed_by_id', session.user.id)
-        pastQuery = pastQuery.eq('filed_by_id', session.user.id)
-      }
+      const weekQuery = supabase
+        .from('service_reports')
+        .select(selectCols)
+        .gte('due_service_date', weekStart)
+        .lte('due_service_date', weekEnd)
+        .order('due_service_date', { ascending: true })
+      const pastQuery = supabase
+        .from('service_reports')
+        .select(selectCols)
+        .gte('due_service_date', ninetyDaysAgoStr)
+        .lt('due_service_date', weekStart)
+        .order('due_service_date', { ascending: false })
 
       const [{ data: weekData }, { data: pastData }, { data: settingData }] = await Promise.all([
         weekQuery,
@@ -78,7 +74,7 @@ export function Dashboard() {
       setLoading(false)
     }
     load()
-  }, [authLoading, isAdmin, session])
+  }, [authLoading, session])
 
   const todayStr = today()
   const services = tab === 'week' ? weekServices : pastServices
@@ -143,19 +139,19 @@ export function Dashboard() {
       ) : (
         <div className="space-y-3">
           {services.map(s => {
-            const isPastDue = s.next_service_date < todayStr
+            const isPastDue = s.due_service_date < todayStr
             const message = buildReminderMessage(template, {
-              name: s.customer.name,
-              model: s.customer.model || 'machine',
-              date: toDisplayDate(s.next_service_date),
+              name: s.service.customer.name,
+              model: s.service.model_number || 'machine',
+              date: toDisplayDate(s.due_service_date),
             })
-            const reminderLink = buildReminderLink(normalizePhone(s.customer.phone), message)
+            const reminderLink = buildReminderLink(normalizePhone(s.service.customer.phone), message)
 
             return (
               <div key={s.id} className="bg-white border border-gray-200 rounded-xl p-4">
                 <div className="flex items-start justify-between mb-1">
                   <div>
-                    <p className="font-semibold text-gray-900 text-sm">{s.customer.name}</p>
+                    <p className="font-semibold text-gray-900 text-sm">{s.service.customer.name}</p>
                     {s.report_number && <p className="text-xs font-mono text-gray-400">{srNum(s.report_number)}</p>}
                   </div>
                   {isPastDue ? (
@@ -168,16 +164,16 @@ export function Dashboard() {
                     </span>
                   )}
                 </div>
-                {s.customer.model && <p className="text-xs text-gray-500">{s.customer.model}</p>}
+                <p className="text-xs text-gray-500 font-mono">{s.service.fab_number}{s.service.model_number ? ` · ${s.service.model_number}` : ''}</p>
+                {s.service.sponsor && <p className="text-xs text-gray-400">Sponsor: {s.service.sponsor}</p>}
                 <div className="flex flex-wrap gap-x-3 text-xs text-gray-400 mt-0.5 mb-3">
-                  <span>Due: {toDisplayDate(s.next_service_date)}</span>
+                  <span>Due: {toDisplayDate(s.due_service_date)}</span>
                   <span>Serviced: {toDisplayDate(s.report_date)}</span>
-                  {s.fab && <span>FAB: {s.fab}</span>}
                 </div>
 
                 <div className="flex gap-2">
                   <a
-                    href={`tel:${s.customer.phone}`}
+                    href={`tel:${s.service.customer.phone}`}
                     className="flex-1 py-2 bg-green-50 text-green-700 rounded-lg text-xs font-semibold text-center"
                   >
                     Call

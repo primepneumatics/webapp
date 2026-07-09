@@ -1,33 +1,17 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { Layout } from '../../components/Layout'
-
-type SparePart = { id: string; code: string; name: string }
-type Engineer = { id: string; name: string | null; phone: string }
 
 export function CustomerNew() {
   const navigate = useNavigate()
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [gstError, setGstError] = useState('')
-  const [spareParts, setSpareParts] = useState<SparePart[]>([])
-  const [selectedSpareIds, setSelectedSpareIds] = useState<string[]>([])
-  const [engineers, setEngineers] = useState<Engineer[]>([])
-  const [assignedEngineerId, setAssignedEngineerId] = useState('')
 
   const [form, setForm] = useState({
-    gst: '', name: '', org: '', address: '', phone: '', model: '',
+    gst: '', name: '', org: '', address: '', phone: '',
   })
-
-  useEffect(() => {
-    supabase.from('spare_parts').select('id, code, name').order('code').then(({ data }) => {
-      if (data) setSpareParts(data)
-    })
-    supabase.from('profiles').select('id, name, phone').eq('role', 'engineer').order('name').then(({ data }) => {
-      if (data) setEngineers(data)
-    })
-  }, [])
 
   async function checkGst() {
     if (!form.gst) return
@@ -40,12 +24,6 @@ export function CustomerNew() {
       setForm(f => ({ ...f, [field]: e.target.value }))
   }
 
-  function toggleSpare(id: string) {
-    setSelectedSpareIds(prev =>
-      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
-    )
-  }
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (gstError) return
@@ -54,11 +32,7 @@ export function CustomerNew() {
 
     const { data, error } = await supabase
       .from('customers')
-      .insert({
-        ...form,
-        spare_part_ids: selectedSpareIds,
-        assigned_engineer_id: assignedEngineerId || null,
-      })
+      .insert(form)
       .select('id')
       .single()
 
@@ -81,44 +55,9 @@ export function CustomerNew() {
         <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
           <Field label="GST Number" value={form.gst} onChange={set('gst')} onBlur={checkGst} placeholder="e.g. 24AAAAA0000A1Z5" error={gstError} />
           <Field label="Customer Name *" value={form.name} onChange={set('name')} required />
-          <Field label="Organisation Name" value={form.org} onChange={set('org')} />
+          <Field label="Company Name" value={form.org} onChange={set('org')} />
           <Field label="Address" value={form.address} onChange={set('address')} textarea />
           <Field label="Phone Number *" value={form.phone} onChange={set('phone')} type="tel" required autoComplete="tel" />
-          <Field label="Model Number" value={form.model} onChange={set('model')} autoComplete="off" />
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Assign Engineer</label>
-            <select
-              value={assignedEngineerId}
-              onChange={e => setAssignedEngineerId(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">Unassigned</option>
-              {engineers.map(eng => (
-                <option key={eng.id} value={eng.id}>{eng.name || eng.phone}</option>
-              ))}
-            </select>
-            <p className="text-xs text-gray-400 mt-1">The assigned engineer will see this customer in their Customers list.</p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Spares Required</label>
-            {spareParts.length === 0 ? (
-              <p className="text-xs text-gray-400">No spare parts in master list yet. Add them via Admin → Spare Parts.</p>
-            ) : (
-              <div className="border border-gray-300 rounded-lg p-3 space-y-2 max-h-48 overflow-y-auto">
-                {spareParts.map(p => (
-                  <label key={p.id} className="flex items-center gap-2 cursor-pointer">
-                    <input type="checkbox" checked={selectedSpareIds.includes(p.id)} onChange={() => toggleSpare(p.id)}
-                      className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
-                    <span className="text-sm text-gray-700">
-                      <span className="font-mono text-gray-400 text-xs mr-1">{p.code}</span>{p.name}
-                    </span>
-                  </label>
-                ))}
-              </div>
-            )}
-          </div>
 
           {error && <p className="text-sm text-red-600">{error}</p>}
 

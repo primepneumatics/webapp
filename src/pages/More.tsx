@@ -33,7 +33,6 @@ export function More() {
             <div className="bg-white border border-gray-200 rounded-xl overflow-hidden divide-y divide-gray-100">
               <MenuItem label="Invite Engineer" onClick={() => navigate('/admin/invite')} />
               <MenuItem label="Spare Parts" onClick={() => navigate('/admin/spare-parts')} />
-              <MenuItem label="Service Types" onClick={() => navigate('/admin/service-types')} />
               <MenuItem label="Settings" onClick={() => navigate('/admin/settings')} />
             </div>
           </div>

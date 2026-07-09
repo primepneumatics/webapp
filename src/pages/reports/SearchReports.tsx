@@ -8,16 +8,18 @@ import { srNum, parseReportNumber } from '../../utils/reportNumber'
 type Result = {
   id: string
   report_number: number
-  filed_by_id: string | null
   report_date: string
-  customer: { name: string }
+  service: { fab_number: string; model_number: string | null; customer: { name: string } }
 }
 
-type Tab = 'customer' | 'report_no' | 'date'
+type Tab = 'customer' | 'fab' | 'report_no' | 'date'
+
+const SELECT_COLS = 'id, report_number, report_date, service:services(fab_number, model_number, customer:customers(name))'
 
 export function SearchReports() {
   const [tab, setTab] = useState<Tab>('customer')
   const [customerQuery, setCustomerQuery] = useState('')
+  const [fabQuery, setFabQuery] = useState('')
   const [reportNoQuery, setReportNoQuery] = useState('')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState(today())
@@ -37,10 +39,29 @@ export function SearchReports() {
       const { data: customers } = await supabase
         .from('customers').select('id').ilike('name', `%${q}%`)
       if (customers && customers.length > 0) {
+        const { data: services } = await supabase
+          .from('services').select('id').in('customer_id', customers.map(c => c.id))
+        if (services && services.length > 0) {
+          const { data } = await supabase
+            .from('service_reports')
+            .select(SELECT_COLS)
+            .in('service_id', services.map(s => s.id))
+            .order('report_number', { ascending: false })
+          setResults((data as unknown as Result[]) ?? [])
+        }
+      }
+    }
+
+    if (tab === 'fab') {
+      const q = fabQuery.trim()
+      if (!q) { setLoading(false); return }
+      const { data: services } = await supabase
+        .from('services').select('id').ilike('fab_number', `%${q}%`)
+      if (services && services.length > 0) {
         const { data } = await supabase
           .from('service_reports')
-          .select('id, report_number, filed_by_id, report_date, customer:customers(name)')
-          .in('customer_id', customers.map(c => c.id))
+          .select(SELECT_COLS)
+          .in('service_id', services.map(s => s.id))
           .order('report_number', { ascending: false })
         setResults((data as unknown as Result[]) ?? [])
       }
@@ -51,7 +72,7 @@ export function SearchReports() {
       if (rn === null) { setLoading(false); return }
       const { data } = await supabase
         .from('service_reports')
-        .select('id, report_number, filed_by_id, report_date, customer:customers(name)')
+        .select(SELECT_COLS)
         .eq('report_number', rn)
       setResults((data as unknown as Result[]) ?? [])
     }
@@ -59,7 +80,7 @@ export function SearchReports() {
     if (tab === 'date') {
       let query = supabase
         .from('service_reports')
-        .select('id, report_number, filed_by_id, report_date, customer:customers(name)')
+        .select(SELECT_COLS)
         .order('report_number', { ascending: false })
       if (dateFrom) query = query.gte('report_date', dateFrom)
       if (dateTo) query = query.lte('report_date', dateTo)
@@ -82,9 +103,10 @@ export function SearchReports() {
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Search Reports</h2>
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-4">
+        <div className="flex gap-2 mb-4 flex-wrap">
           {([
             { key: 'customer', label: 'Customer' },
+            { key: 'fab', label: 'FAB Number' },
             { key: 'report_no', label: 'Report No.' },
             { key: 'date', label: 'Date Range' },
           ] as { key: Tab; label: string }[]).map(t => (
@@ -112,6 +134,20 @@ export function SearchReports() {
                 value={customerQuery}
                 onChange={e => setCustomerQuery(e.target.value)}
                 placeholder="e.g. Sharma Industries"
+                style={{ fontSize: '16px' }}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          )}
+
+          {tab === 'fab' && (
+            <div>
+              <label className="block text-xs text-gray-500 mb-1">FAB Number</label>
+              <input
+                type="search"
+                value={fabQuery}
+                onChange={e => setFabQuery(e.target.value)}
+                placeholder="e.g. FAB2K91A"
                 style={{ fontSize: '16px' }}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
@@ -179,8 +215,9 @@ export function SearchReports() {
                 <Link key={r.id} to={`/reports/${r.id}`}
                   className="flex items-center justify-between bg-white border border-gray-200 rounded-xl px-4 py-3.5 hover:bg-gray-50 active:bg-gray-100">
                   <div>
-                    <p className="text-sm font-medium text-gray-900">{r.customer.name}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">{toDisplayDate(r.report_date)}</p>
+                    <p className="text-sm font-medium text-gray-900">{r.service.customer.name}</p>
+                    <p className="text-xs text-gray-400 mt-0.5 font-mono">{r.service.fab_number}{r.service.model_number ? ` · ${r.service.model_number}` : ''}</p>
+                    <p className="text-xs text-gray-400">{toDisplayDate(r.report_date)}</p>
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="text-xs font-mono font-semibold text-gray-600">{srNum(r.report_number)}</span>

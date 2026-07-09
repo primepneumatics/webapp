@@ -9,9 +9,6 @@ type Customer = {
   name: string
   org: string
   phone: string
-  model: string
-  assigned_engineer_id: string | null
-  assigned_engineer: { name: string | null; phone: string } | null
 }
 
 export function CustomerList() {
@@ -24,18 +21,15 @@ export function CustomerList() {
   useEffect(() => {
     if (authLoading || !session) return
 
-    let query = supabase
+    supabase
       .from('customers')
-      .select('id, name, org, phone, model, assigned_engineer_id, assigned_engineer:profiles!assigned_engineer_id(name, phone)')
-      .order('name')
-
-    if (!isAdmin) query = query.eq('assigned_engineer_id', session.user.id)
-
-    query.then(({ data }) => {
-      if (data) setCustomers(data as unknown as Customer[])
-      setLoading(false)
-    })
-  }, [authLoading, isAdmin, session])
+      .select('id, name, org, phone')
+      .order('org')
+      .then(({ data }) => {
+        if (data) setCustomers(data)
+        setLoading(false)
+      })
+  }, [authLoading, session])
 
   const filtered = search.trim()
     ? customers.filter(c => {
@@ -43,8 +37,7 @@ export function CustomerList() {
         return (
           c.name?.toLowerCase().includes(q) ||
           c.org?.toLowerCase().includes(q) ||
-          c.phone?.includes(q) ||
-          c.model?.toLowerCase().includes(q)
+          c.phone?.includes(q)
         )
       })
     : customers
@@ -67,7 +60,7 @@ export function CustomerList() {
         type="search"
         value={search}
         onChange={e => setSearch(e.target.value)}
-        placeholder="Search by name, org, phone or model..."
+        placeholder="Search by company, name or phone..."
         className="w-full mb-4 border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
       />
 
@@ -75,9 +68,7 @@ export function CustomerList() {
         <p className="text-gray-400 text-sm">Loading...</p>
       ) : customers.length === 0 ? (
         <div className="bg-white border border-gray-200 rounded-xl p-10 text-center">
-          <p className="text-gray-500 text-sm">
-            {isAdmin ? 'No customers yet.' : 'No customers assigned to you yet.'}
-          </p>
+          <p className="text-gray-500 text-sm">No customers yet.</p>
           {isAdmin && (
             <Link to="/customers/new" className="text-blue-600 text-sm mt-2 inline-block">
               Add your first customer &rarr;
@@ -97,20 +88,9 @@ export function CustomerList() {
               onClick={() => navigate(`/customers/${c.id}`)}
             >
               <div className="min-w-0">
-                <p className="font-semibold text-gray-900 text-sm truncate">{c.name}</p>
-                {c.org && <p className="text-xs text-gray-500 truncate">{c.org}</p>}
-                <p className="text-xs text-gray-400 mt-0.5">
-                  {c.phone}{c.model ? ` · ${c.model}` : ''}
-                </p>
-                {isAdmin && (
-                  <p className="text-xs mt-1">
-                    {c.assigned_engineer ? (
-                      <span className="text-gray-500">Assigned: {c.assigned_engineer.name || c.assigned_engineer.phone}</span>
-                    ) : (
-                      <span className="text-amber-600">Unassigned</span>
-                    )}
-                  </p>
-                )}
+                <p className="font-semibold text-gray-900 text-sm truncate">{c.org || c.name}</p>
+                {c.org && <p className="text-xs text-gray-500 truncate">{c.name}</p>}
+                <p className="text-xs text-gray-400 mt-0.5">{c.phone}</p>
               </div>
               <span className="text-gray-300 text-xl ml-3 shrink-0">&#8250;</span>
             </div>
