@@ -103,8 +103,8 @@ export function InviteEngineer() {
     try {
       const { password } = await callAdminApi(session?.access_token, { action: 'resetPassword', userId: engineer.id })
       window.open(buildInviteLink(engineer.phone, password), '_blank')
-    } catch {
-      alert('Failed to reset password. Please try again.')
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to reset password. Please try again.')
     } finally {
       setResettingId(null)
     }
