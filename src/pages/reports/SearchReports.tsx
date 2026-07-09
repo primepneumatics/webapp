@@ -9,12 +9,12 @@ type Result = {
   id: string
   report_number: number
   report_date: string
-  service: { fab_number: string; model_number: string | null; customer: { name: string } }
+  service: { fab_number: string; model_number: string | null; customer: { name: string; org: string | null } }
 }
 
 type Tab = 'customer' | 'fab' | 'report_no'
 
-const SELECT_COLS = 'id, report_number, report_date, service:services(fab_number, model_number, customer:customers(name))'
+const SELECT_COLS = 'id, report_number, report_date, service:services(fab_number, model_number, customer:customers(name, org))'
 
 export function SearchReports() {
   const [tab, setTab] = useState<Tab>('customer')
@@ -35,7 +35,7 @@ export function SearchReports() {
       const q = customerQuery.trim()
       if (!q) { setLoading(false); return }
       const { data: customers } = await supabase
-        .from('customers').select('id').ilike('name', `%${q}%`)
+        .from('customers').select('id').ilike('org', `%${q}%`)
       if (customers && customers.length > 0) {
         const { data: services } = await supabase
           .from('services').select('id').in('customer_id', customers.map(c => c.id))
@@ -92,7 +92,7 @@ export function SearchReports() {
         {/* Tabs */}
         <div className="flex gap-2 mb-4 flex-wrap">
           {([
-            { key: 'customer', label: 'Customer' },
+            { key: 'customer', label: 'Company' },
             { key: 'fab', label: 'FAB Number' },
             { key: 'report_no', label: 'Report No.' },
           ] as { key: Tab; label: string }[]).map(t => (
@@ -114,7 +114,7 @@ export function SearchReports() {
         <form onSubmit={handleSearch} className="bg-white border border-gray-200 rounded-xl p-4 mb-4 space-y-3">
           {tab === 'customer' && (
             <div>
-              <label className="block text-xs text-gray-500 mb-1">Customer Name</label>
+              <label className="block text-xs text-gray-500 mb-1">Company Name</label>
               <input
                 type="search"
                 value={customerQuery}
@@ -176,7 +176,7 @@ export function SearchReports() {
                 <Link key={r.id} to={`/reports/${r.id}`}
                   className="flex items-center justify-between bg-white border border-gray-200 rounded-xl px-4 py-3.5 hover:bg-gray-50 active:bg-gray-100">
                   <div>
-                    <p className="text-sm font-medium text-gray-900">{r.service.customer.name}</p>
+                    <p className="text-sm font-medium text-gray-900">{r.service.customer.org || r.service.customer.name}</p>
                     <p className="text-xs text-gray-400 mt-0.5 font-mono">{r.service.fab_number}{r.service.model_number ? ` · ${r.service.model_number}` : ''}</p>
                     <p className="text-xs text-gray-400">{toDisplayDate(r.report_date)}</p>
                   </div>
