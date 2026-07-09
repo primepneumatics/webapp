@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { Layout } from '../../components/Layout'
-import { toDisplayDate, today } from '../../utils/dateEngine'
+import { toDisplayDate } from '../../utils/dateEngine'
 import { srNum, parseReportNumber } from '../../utils/reportNumber'
 
 type Result = {
@@ -12,7 +12,7 @@ type Result = {
   service: { fab_number: string; model_number: string | null; customer: { name: string } }
 }
 
-type Tab = 'customer' | 'fab' | 'report_no' | 'date'
+type Tab = 'customer' | 'fab' | 'report_no'
 
 const SELECT_COLS = 'id, report_number, report_date, service:services(fab_number, model_number, customer:customers(name))'
 
@@ -21,8 +21,6 @@ export function SearchReports() {
   const [customerQuery, setCustomerQuery] = useState('')
   const [fabQuery, setFabQuery] = useState('')
   const [reportNoQuery, setReportNoQuery] = useState('')
-  const [dateFrom, setDateFrom] = useState('')
-  const [dateTo, setDateTo] = useState(today())
   const [results, setResults] = useState<Result[]>([])
   const [loading, setLoading] = useState(false)
   const [searched, setSearched] = useState(false)
@@ -77,17 +75,6 @@ export function SearchReports() {
       setResults((data as unknown as Result[]) ?? [])
     }
 
-    if (tab === 'date') {
-      let query = supabase
-        .from('service_reports')
-        .select(SELECT_COLS)
-        .order('report_number', { ascending: false })
-      if (dateFrom) query = query.gte('report_date', dateFrom)
-      if (dateTo) query = query.lte('report_date', dateTo)
-      const { data } = await query
-      setResults((data as unknown as Result[]) ?? [])
-    }
-
     setLoading(false)
   }
 
@@ -108,7 +95,6 @@ export function SearchReports() {
             { key: 'customer', label: 'Customer' },
             { key: 'fab', label: 'FAB Number' },
             { key: 'report_no', label: 'Report No.' },
-            { key: 'date', label: 'Date Range' },
           ] as { key: Tab; label: string }[]).map(t => (
             <button
               key={t.key}
@@ -165,31 +151,6 @@ export function SearchReports() {
                 style={{ fontSize: '16px' }}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-            </div>
-          )}
-
-          {tab === 'date' && (
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="block text-xs text-gray-500 mb-1">From</label>
-                <input
-                  type="date"
-                  value={dateFrom}
-                  onChange={e => setDateFrom(e.target.value)}
-                  style={{ fontSize: '16px' }}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-gray-500 mb-1">To</label>
-                <input
-                  type="date"
-                  value={dateTo}
-                  onChange={e => setDateTo(e.target.value)}
-                  style={{ fontSize: '16px' }}
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
             </div>
           )}
 
