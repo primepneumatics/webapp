@@ -114,8 +114,8 @@ export function InviteEngineer() {
     try {
       await callAdminApi(session?.access_token, { action: 'deleteUser', userId: engineer.id })
       setEngineers(prev => prev.filter(eng => eng.id !== engineer.id))
-    } catch {
-      alert('Failed to delete engineer. Please try again.')
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'Failed to delete engineer. Please try again.')
     } finally {
       setDeletingId(null)
     }

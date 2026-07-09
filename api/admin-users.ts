@@ -78,7 +78,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     if (action === 'deleteUser') {
-      await admin.from('profiles').delete().eq('id', userId)
+      // profiles.id -> auth.users(id) is ON DELETE CASCADE, so deleting the
+      // auth user removes the profile row too. No need to delete it separately.
       const { error } = await admin.auth.admin.deleteUser(userId)
       if (error) {
         res.status(400).json({ error: error.message })
