@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
-import { toDisplayDate } from '../../utils/dateEngine'
+import { toDisplayDate, today } from '../../utils/dateEngine'
 import { srNum } from '../../utils/reportNumber'
 import { downloadPdf } from '../../utils/downloadPdf'
 import { Layout } from '../../components/Layout'
@@ -78,86 +78,118 @@ export function ReportView() {
   if (!report) return <Layout><p className="text-red-500 text-sm">Report not found.</p></Layout>
 
   const reportCard = (
-    <div ref={printRef} className="bg-white p-8 print:p-0 print:pb-2 space-y-6 print:space-y-4">
-      <div className="border-b border-gray-100 pb-4 flex items-end justify-between">
+    <div ref={printRef} className="bg-white p-8 print:p-0 print:pb-2 space-y-4">
+      {/* Header */}
+      <div className="flex items-end justify-between pb-4 border-b-2 border-gray-900">
         <div>
           <img src="/logo.png" alt="Prime Pneumatics & Consultants" className="h-10 w-auto mb-1" />
-          <p className="text-sm text-gray-500">Service Report</p>
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Service Report</p>
         </div>
         {report.report_number && (
-          <p className="text-sm font-mono font-semibold text-gray-700">{srNum(report.report_number)}</p>
+          <p className="inline-block px-2.5 py-1 border border-gray-300 rounded-md font-mono text-sm font-semibold text-gray-800">
+            {srNum(report.report_number)}
+          </p>
         )}
       </div>
 
-      <table className="w-full text-sm" style={{ borderCollapse: 'collapse' }}>
-        <tbody>
-          <InfoRowPair
-            a={{ label: 'Customer', value: report.service.customer.name }}
-            b={{ label: 'Company Name', value: report.service.customer.org }}
-          />
-          <InfoRowPair
-            a={{ label: 'Customer Number', value: report.service.customer.phone }}
-            b={{ label: 'GST', value: report.service.customer.gst }}
-          />
-          <InfoRowPair
-            a={{ label: 'FAB Number', value: report.service.fab_number }}
-            b={{ label: 'Model Number', value: report.service.model_number ?? '' }}
-          />
-          <InfoRowPair
-            a={{ label: 'Report Date', value: toDisplayDate(report.report_date) }}
-            b={{ label: 'Report No.', value: report.report_number ? srNum(report.report_number) : '—' }}
-          />
-          <InfoRowPair
-            a={{ label: 'Total Machine Run', value: `${report.total_run_hours} hrs` }}
-            b={{ label: 'Sponsor', value: report.service.sponsor ?? '' }}
-          />
-          <InfoRowPair
-            a={{ label: 'Due Service Date', value: report.due_service_date ? toDisplayDate(report.due_service_date) : '' }}
-            b={{ label: 'Service By', value: report.serviced_by ?? '' }}
-          />
-        </tbody>
-      </table>
+      {/* Customer */}
+      <SectionCard title="Customer">
+        <table className="w-full text-sm" style={{ borderCollapse: 'collapse' }}>
+          <tbody>
+            <InfoRowPair
+              a={{ label: 'Customer', value: report.service.customer.name }}
+              b={{ label: 'Company Name', value: report.service.customer.org }}
+            />
+            <InfoRowPair
+              a={{ label: 'Customer Number', value: report.service.customer.phone }}
+              b={{ label: 'GST', value: report.service.customer.gst }}
+            />
+          </tbody>
+        </table>
+      </SectionCard>
 
+      {/* Machine */}
+      <SectionCard title="Machine">
+        <table className="w-full text-sm" style={{ borderCollapse: 'collapse' }}>
+          <tbody>
+            <InfoRowPair
+              a={{ label: 'FAB Number', value: report.service.fab_number }}
+              b={{ label: 'Model Number', value: report.service.model_number ?? '' }}
+            />
+            <InfoRowPair
+              a={{ label: 'Sponsor', value: report.service.sponsor ?? '' }}
+              b={{ label: '', value: '' }}
+            />
+          </tbody>
+        </table>
+      </SectionCard>
+
+      {/* Service Summary */}
+      <SectionCard title="Service Summary">
+        <table className="w-full text-sm" style={{ borderCollapse: 'collapse' }}>
+          <tbody>
+            <InfoRowPair
+              a={{ label: 'Report Date', value: toDisplayDate(report.report_date) }}
+              b={{ label: 'Report No.', value: report.report_number ? srNum(report.report_number) : '—' }}
+            />
+            <InfoRowPair
+              a={{ label: 'Total Machine Run', value: `${report.total_run_hours} hrs` }}
+              b={{ label: 'Due Service Date', value: report.due_service_date ? toDisplayDate(report.due_service_date) : '' }}
+            />
+            <InfoRowPair
+              a={{ label: 'Service By', value: report.serviced_by ?? '' }}
+              b={{ label: '', value: '' }}
+            />
+          </tbody>
+        </table>
+      </SectionCard>
+
+      {/* Spare Part Status */}
       {parts.length > 0 && (
-        <div>
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Spare Part Status</p>
-          <table className="w-full text-sm">
+        <SectionCard title="Spare Part Status">
+          <table className="w-full text-sm" style={{ borderCollapse: 'collapse' }}>
             <thead>
-              <tr className="text-left text-xs text-gray-400 border-b border-gray-100">
-                <th className="pb-1">Part</th>
-                <th className="pb-1 text-right">Qty</th>
-                <th className="pb-1 text-right">Hours Run</th>
-                <th className="pb-1 text-right">Next Hours</th>
-                <th className="pb-1 text-right">Remaining Hrs</th>
-                <th className="pb-1 text-right">Maint. Days</th>
-                <th className="pb-1 text-right">Due Date</th>
+              <tr className="text-left text-xs text-gray-500 bg-gray-50">
+                <th className="py-2 px-2">Part</th>
+                <th className="py-2 px-2 text-right">Qty</th>
+                <th className="py-2 px-2 text-right">Hours Run</th>
+                <th className="py-2 px-2 text-right">Next Hours</th>
+                <th className="py-2 px-2 text-right">Remaining Hrs</th>
+                <th className="py-2 px-2 text-right">Maint. Days</th>
+                <th className="py-2 px-2 text-right">Due Date</th>
               </tr>
             </thead>
             <tbody>
               {parts.map(p => (
-                <tr key={p.spare_part_id} className="border-b border-gray-50">
-                  <td className="py-1.5 text-gray-800">
+                <tr key={p.spare_part_id} className="border-b border-gray-100 break-inside-avoid">
+                  <td className="py-2 px-2 text-gray-800">
                     <span className="font-mono text-gray-400 text-xs mr-1">{p.spare_part.code}</span>{p.spare_part.name}
                   </td>
-                  <td className="py-1.5 text-right text-gray-600">{p.qty}</td>
-                  <td className="py-1.5 text-right text-gray-600">{p.hours_run}</td>
-                  <td className="py-1.5 text-right text-gray-600">{p.next_hours}</td>
-                  <td className={`py-1.5 text-right font-medium ${p.remaining_hours <= 0 ? 'text-red-600' : 'text-gray-900'}`}>{p.remaining_hours}</td>
-                  <td className="py-1.5 text-right text-gray-600">{p.maintenance_days}</td>
-                  <td className="py-1.5 text-right text-gray-600">{toDisplayDate(p.due_date)}</td>
+                  <td className="py-2 px-2 text-right text-gray-600">{p.qty}</td>
+                  <td className="py-2 px-2 text-right text-gray-600">{p.hours_run}</td>
+                  <td className="py-2 px-2 text-right text-gray-600">{p.next_hours}</td>
+                  <td className={`py-2 px-2 text-right font-medium ${p.remaining_hours <= 0 ? 'text-red-600' : 'text-gray-900'}`}>{p.remaining_hours}</td>
+                  <td className="py-2 px-2 text-right text-gray-600">{p.maintenance_days}</td>
+                  <td className="py-2 px-2 text-right text-gray-600">{toDisplayDate(p.due_date)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
-        </div>
+        </SectionCard>
       )}
 
+      {/* Remarks */}
       {report.remarks && (
-        <div>
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">Remarks</p>
-          <p className="text-sm text-gray-700">{report.remarks}</p>
-        </div>
+        <SectionCard title="Remarks">
+          <p className="text-sm text-gray-700 whitespace-pre-wrap">{report.remarks}</p>
+        </SectionCard>
       )}
+
+      {/* Footer */}
+      <div className="pt-3 border-t border-gray-100 flex items-center justify-between text-[10px] text-gray-400">
+        <span>Prime Pneumatics &amp; Consultants</span>
+        <span>Generated {toDisplayDate(today())}</span>
+      </div>
     </div>
   )
 
@@ -214,6 +246,15 @@ export function ReportView() {
         </div>
       </div>
     </Layout>
+  )
+}
+
+function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="border border-gray-200 rounded-xl p-5 break-inside-avoid">
+      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">{title}</p>
+      {children}
+    </div>
   )
 }
 
