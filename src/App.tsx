@@ -39,6 +39,7 @@ export default function App() {
         <Route path="/services/:id/reports" element={<ProtectedRoute><ServiceReports /></ProtectedRoute>} />
         <Route path="/services/:id/reports/new" element={<ProtectedRoute><ReportNew /></ProtectedRoute>} />
 
+        <Route path="/reports/new/:customerId" element={<ProtectedRoute><ReportNew /></ProtectedRoute>} />
         <Route path="/reports/:id" element={<ProtectedRoute><ReportView /></ProtectedRoute>} />
         <Route path="/search" element={<ProtectedRoute><SearchReports /></ProtectedRoute>} />
 

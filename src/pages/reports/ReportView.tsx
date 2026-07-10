@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { Link, useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { toDisplayDate } from '../../utils/dateEngine'
 import { srNum } from '../../utils/reportNumber'
@@ -28,7 +28,7 @@ type Report = {
   remarks: string
   serviced_by: string | null
   due_service_date: string | null
-  service: { fab_number: string; model_number: string | null; sponsor: string | null; customer: { name: string; org: string; phone: string; gst: string } }
+  service: { fab_number: string; model_number: string | null; sponsor: string | null; customer: { id: string; name: string; org: string; phone: string; gst: string } }
   filed_by: { name: string | null; phone: string } | null
 }
 
@@ -55,7 +55,7 @@ export function ReportView() {
     Promise.all([
       supabase
         .from('service_reports')
-        .select('*, service:services(fab_number, model_number, sponsor, customer:customers(name, org, phone, gst)), filed_by:profiles!filed_by_id(name, phone)')
+        .select('*, service:services(fab_number, model_number, sponsor, customer:customers(id, name, org, phone, gst)), filed_by:profiles!filed_by_id(name, phone)')
         .eq('id', id)
         .single(),
       supabase.from('service_report_parts').select('*, spare_part:spare_parts(code, name)').eq('service_report_id', id),
@@ -172,7 +172,11 @@ export function ReportView() {
               {report.report_number && <p className="text-xs text-gray-400 font-mono">{srNum(report.report_number)}</p>}
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center flex-wrap gap-2">
+            <Link to={`/reports/new/${report.service.customer.id}`}
+              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">
+              File Report
+            </Link>
             <button onClick={() => navigate(`/services/${report.service_id}/reports`)}
               className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">
               Report History

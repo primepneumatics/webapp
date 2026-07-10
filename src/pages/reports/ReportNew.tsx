@@ -10,14 +10,19 @@ import { alphanumericOnly } from '../../utils/validate'
 
 type SparePart = { id: string; code: string; name: string }
 type ServiceInfo = { id: string; fab_number: string; model_number: string | null; customer_id: string }
+type ExistingMachine = { id: string; fab_number: string; model_number: string | null; sponsor: string | null }
 type TrackedPart = { spare_part_id: string; code: string; name: string; qty: string; hours_per_day: 12 | 24; remaining_hrs: string; maintenance_days: string }
 
 export function ReportNew() {
-  const { id: serviceId } = useParams<{ id: string }>()
+  const { id: routeServiceId, customerId: routeCustomerId } = useParams<{ id?: string; customerId?: string }>()
+  const isCustomerMode = !routeServiceId && !!routeCustomerId
   const navigate = useNavigate()
   const engineerSuggestions = useEngineerSuggestions()
 
+  const [loading, setLoading] = useState(true)
   const [service, setService] = useState<ServiceInfo | null>(null)
+  const [customerName, setCustomerName] = useState('')
+  const [existingMachines, setExistingMachines] = useState<ExistingMachine[]>([])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
 
@@ -28,22 +33,54 @@ export function ReportNew() {
 
   const [reportDate, setReportDate] = useState(today())
   const [totalRunHours, setTotalRunHours] = useState('')
+  const [modelNumber, setModelNumber] = useState('')
   const [fabNumber, setFabNumber] = useState('')
   const [fabError, setFabError] = useState('')
+  const [sponsor, setSponsor] = useState('')
   const [remarks, setRemarks] = useState('')
   const [servicedBy, setServicedBy] = useState('')
 
+  const matchedMachine = isCustomerMode && modelNumber
+    ? existingMachines.find(m => m.model_number === modelNumber) ?? null
+    : null
+
   useEffect(() => {
-    supabase.from('services').select('id, fab_number, model_number, customer_id').eq('id', serviceId).single()
-      .then(({ data }) => { if (data) { setService(data); setFabNumber(data.fab_number) } })
-    supabase.from('spare_parts').select('id, code, name').order('code').then(({ data }) => {
-      if (data) setSpareParts(data)
-    })
-  }, [serviceId])
+    async function load() {
+      if (routeServiceId) {
+        const { data } = await supabase.from('services').select('id, fab_number, model_number, customer_id').eq('id', routeServiceId).single()
+        if (data) { setService(data); setFabNumber(data.fab_number) }
+      } else if (routeCustomerId) {
+        const [{ data: cust }, { data: machines }] = await Promise.all([
+          supabase.from('customers').select('name').eq('id', routeCustomerId).single(),
+          supabase.from('services').select('id, fab_number, model_number, sponsor').eq('customer_id', routeCustomerId),
+        ])
+        if (cust) setCustomerName(cust.name)
+        if (machines) setExistingMachines(machines)
+      }
+      const { data: spares } = await supabase.from('spare_parts').select('id, code, name').order('code')
+      if (spares) setSpareParts(spares)
+      setLoading(false)
+    }
+    load()
+  }, [routeServiceId, routeCustomerId])
+
+  function handleModelNumberChange(rawValue: string) {
+    const value = alphanumericOnly(rawValue)
+    setModelNumber(value)
+    const match = existingMachines.find(m => m.model_number === value)
+    if (match) {
+      setFabNumber(match.fab_number)
+      setSponsor(match.sponsor ?? '')
+      setFabError('')
+    }
+  }
 
   async function checkFab() {
-    if (!service || !fabNumber || fabNumber === service.fab_number) { setFabError(''); return }
-    const { data } = await supabase.from('services').select('id').eq('fab_number', fabNumber).neq('id', service.id).maybeSingle()
+    if (!fabNumber) return
+    const excludeId = service?.id ?? matchedMachine?.id
+    let query = supabase.from('services').select('id').eq('fab_number', fabNumber)
+    if (excludeId) query = query.neq('id', excludeId)
+    const { data } = await query.maybeSingle()
     setFabError(data ? 'A machine with this FAB Number already exists.' : '')
   }
 
@@ -64,20 +101,63 @@ export function ReportNew() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!service || fabError || !fabNumber.trim()) return
+    if (fabError || !fabNumber.trim()) return
     setError('')
     setSaving(true)
 
-    if (fabNumber.trim() !== service.fab_number) {
-      const { error: fabUpdateError } = await supabase
-        .from('services')
-        .update({ fab_number: fabNumber.trim(), updated_at: new Date().toISOString() })
-        .eq('id', service.id)
-      if (fabUpdateError) {
-        setError(fabUpdateError.code === '23505' ? 'A machine with this FAB Number already exists.' : 'Failed to update FAB number.')
-        setSaving(false)
-        return
+    let resolvedServiceId: string
+
+    if (routeServiceId && service) {
+      resolvedServiceId = service.id
+      if (fabNumber.trim() !== service.fab_number) {
+        const { error: fabUpdateError } = await supabase
+          .from('services')
+          .update({ fab_number: fabNumber.trim(), updated_at: new Date().toISOString() })
+          .eq('id', service.id)
+        if (fabUpdateError) {
+          setError(fabUpdateError.code === '23505' ? 'A machine with this FAB Number already exists.' : 'Failed to update FAB number.')
+          setSaving(false)
+          return
+        }
       }
+    } else if (routeCustomerId) {
+      if (matchedMachine) {
+        const { error: updateError } = await supabase
+          .from('services')
+          .update({
+            fab_number: fabNumber.trim(),
+            model_number: modelNumber.trim() || null,
+            sponsor: sponsor.trim() || null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('id', matchedMachine.id)
+        if (updateError) {
+          setError(updateError.code === '23505' ? 'A machine with this FAB Number already exists.' : 'Failed to save machine.')
+          setSaving(false)
+          return
+        }
+        resolvedServiceId = matchedMachine.id
+      } else {
+        const { data: newService, error: svcError } = await supabase
+          .from('services')
+          .insert({
+            customer_id: routeCustomerId,
+            fab_number: fabNumber.trim(),
+            model_number: modelNumber.trim() || null,
+            sponsor: sponsor.trim() || null,
+          })
+          .select('id')
+          .single()
+        if (svcError || !newService) {
+          setError(svcError?.code === '23505' ? 'A machine with this FAB Number already exists.' : 'Failed to save machine. Please try again.')
+          setSaving(false)
+          return
+        }
+        resolvedServiceId = newService.id
+      }
+    } else {
+      setSaving(false)
+      return
     }
 
     const { data: { user } } = await supabase.auth.getUser()
@@ -107,7 +187,7 @@ export function ReportNew() {
     const { data: report, error: reportError } = await supabase
       .from('service_reports')
       .insert({
-        service_id: serviceId,
+        service_id: resolvedServiceId,
         report_date: reportDate,
         total_run_hours: hoursRun,
         remarks,
@@ -138,7 +218,7 @@ export function ReportNew() {
         trackedParts.map(tp => {
           const remaining = Math.max(0, parseFloat(tp.remaining_hrs) || 0)
           return {
-            service_id: serviceId,
+            service_id: resolvedServiceId,
             spare_part_id: tp.spare_part_id,
             hours_run: hoursRun,
             next_hours: hoursRun + remaining,
@@ -153,20 +233,52 @@ export function ReportNew() {
     navigate(`/reports/${report.id}`)
   }
 
-  if (!service) return <Layout><p className="text-gray-400 text-sm">Loading...</p></Layout>
+  if (loading) return <Layout><p className="text-gray-400 text-sm">Loading...</p></Layout>
 
   return (
     <Layout>
       <div className="max-w-xl">
         <div className="flex items-center gap-3 mb-6">
-          <button onClick={() => navigate(`/services/${serviceId}`)} className="text-gray-400 hover:text-gray-600">← Back</button>
+          <button onClick={() => routeServiceId ? navigate(`/services/${routeServiceId}`) : navigate(-1)} className="text-gray-400 hover:text-gray-600">← Back</button>
           <div>
             <h2 className="text-xl font-semibold text-gray-900">New Service Report</h2>
-            <p className="text-sm text-gray-500 font-mono">{service.fab_number}{service.model_number ? ` · ${service.model_number}` : ''}</p>
+            {service && (
+              <p className="text-sm text-gray-500 font-mono">{service.fab_number}{service.model_number ? ` · ${service.model_number}` : ''}</p>
+            )}
+            {isCustomerMode && customerName && <p className="text-sm text-gray-500">{customerName}</p>}
           </div>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {isCustomerMode && (
+            <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+              <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Machine</h3>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Model Number</label>
+                <SuggestInput
+                  value={modelNumber}
+                  onChange={handleModelNumberChange}
+                  suggestions={existingMachines.map(m => m.model_number).filter((v): v is string => !!v)}
+                  placeholder="e.g. GA30VSD"
+                />
+                {matchedMachine && (
+                  <p className="text-xs text-blue-600 mt-1">Existing machine found for this customer — FAB Number and Sponsor filled in from it.</p>
+                )}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">FAB Number *</label>
+                <input type="text" value={fabNumber} onChange={e => setFabNumber(alphanumericOnly(e.target.value))} onBlur={checkFab} required
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                {fabError && <p className="text-xs text-red-600 mt-1">{fabError}</p>}
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Sponsor</label>
+                <input type="text" value={sponsor} onChange={e => setSponsor(e.target.value)} placeholder="Dealer / referrer name"
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+            </div>
+          )}
+
           {/* Header block */}
           <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
             <div>
@@ -174,16 +286,18 @@ export function ReportNew() {
               <input type="date" value={reportDate} onChange={e => setReportDate(e.target.value)} required
                 className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">FAB Number *</label>
-              <input type="text" value={fabNumber} onChange={e => setFabNumber(alphanumericOnly(e.target.value))} onBlur={checkFab} required
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500" />
-              {fabError ? (
-                <p className="text-xs text-red-600 mt-1">{fabError}</p>
-              ) : (
-                <p className="text-xs text-gray-400 mt-1">Tied to this machine — changing it here updates the machine's FAB Number too.</p>
-              )}
-            </div>
+            {routeServiceId && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">FAB Number *</label>
+                <input type="text" value={fabNumber} onChange={e => setFabNumber(alphanumericOnly(e.target.value))} onBlur={checkFab} required
+                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                {fabError ? (
+                  <p className="text-xs text-red-600 mt-1">{fabError}</p>
+                ) : (
+                  <p className="text-xs text-gray-400 mt-1">Tied to this machine — changing it here updates the machine's FAB Number too.</p>
+                )}
+              </div>
+            )}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Total Run Hours *</label>
               <input type="number" min="0" value={totalRunHours} onChange={e => setTotalRunHours(e.target.value)} required
