@@ -4,11 +4,19 @@ import { supabase } from '../../lib/supabase'
 import { toDisplayDate } from '../../utils/dateEngine'
 import { srNum } from '../../utils/reportNumber'
 import { downloadPdf } from '../../utils/downloadPdf'
-import { PART_TYPES } from '../../utils/machineParts'
 import { Layout } from '../../components/Layout'
 
 type SelectedSpare = { id: string; code: string; name: string; qty: number }
-type ReportPart = { part_type: string; hours_run: number; next_hours: number; hours_per_day: number; remaining_hours: number; due_date: string; maintenance_days: number }
+type ReportPart = {
+  spare_part_id: string
+  hours_run: number
+  next_hours: number
+  hours_per_day: number
+  remaining_hours: number
+  due_date: string
+  maintenance_days: number
+  spare_part: { code: string; name: string }
+}
 
 type Report = {
   id: string
@@ -51,7 +59,7 @@ export function ReportView() {
         .select('*, service:services(fab_number, model_number, sponsor, customer:customers(name, org, phone, gst)), filed_by:profiles!filed_by_id(name, phone)')
         .eq('id', id)
         .single(),
-      supabase.from('service_report_parts').select('*').eq('service_report_id', id),
+      supabase.from('service_report_parts').select('*, spare_part:spare_parts(code, name)').eq('service_report_id', id),
     ]).then(([{ data }, { data: partsData }]) => {
       setReport(data as unknown as Report)
       if (partsData) setParts(partsData)
@@ -128,20 +136,18 @@ export function ReportView() {
               </tr>
             </thead>
             <tbody>
-              {PART_TYPES.map(({ key, label }) => {
-                const p = parts.find(x => x.part_type === key)
-                if (!p) return null
-                return (
-                  <tr key={key} className="border-b border-gray-50">
-                    <td className="py-1.5 text-gray-800">{label}</td>
-                    <td className="py-1.5 text-right text-gray-600">{p.hours_run}</td>
-                    <td className="py-1.5 text-right text-gray-600">{p.next_hours}</td>
-                    <td className={`py-1.5 text-right font-medium ${p.remaining_hours <= 0 ? 'text-red-600' : 'text-gray-900'}`}>{p.remaining_hours}</td>
-                    <td className="py-1.5 text-right text-gray-600">{p.maintenance_days}</td>
-                    <td className="py-1.5 text-right text-gray-600">{toDisplayDate(p.due_date)}</td>
-                  </tr>
-                )
-              })}
+              {parts.map(p => (
+                <tr key={p.spare_part_id} className="border-b border-gray-50">
+                  <td className="py-1.5 text-gray-800">
+                    <span className="font-mono text-gray-400 text-xs mr-1">{p.spare_part.code}</span>{p.spare_part.name}
+                  </td>
+                  <td className="py-1.5 text-right text-gray-600">{p.hours_run}</td>
+                  <td className="py-1.5 text-right text-gray-600">{p.next_hours}</td>
+                  <td className={`py-1.5 text-right font-medium ${p.remaining_hours <= 0 ? 'text-red-600' : 'text-gray-900'}`}>{p.remaining_hours}</td>
+                  <td className="py-1.5 text-right text-gray-600">{p.maintenance_days}</td>
+                  <td className="py-1.5 text-right text-gray-600">{toDisplayDate(p.due_date)}</td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>

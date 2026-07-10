@@ -1,22 +1,4 @@
-export type PartType = 'air_filter' | 'oil_filter' | 'separator' | 'rotary_oil'
-
-export const PART_TYPES: { key: PartType; label: string }[] = [
-  { key: 'air_filter', label: 'Air Filter' },
-  { key: 'oil_filter', label: 'Oil Filter' },
-  { key: 'separator', label: 'Oil Separator' },
-  { key: 'rotary_oil', label: 'Rotary Oil' },
-]
-
 export type PartState = { hours_run: number; next_hours: number; hours_per_day: 12 | 24 }
-
-export function emptyPartState(): Record<PartType, PartState> {
-  return {
-    air_filter: { hours_run: 0, next_hours: 0, hours_per_day: 24 },
-    oil_filter: { hours_run: 0, next_hours: 0, hours_per_day: 24 },
-    separator: { hours_run: 0, next_hours: 0, hours_per_day: 24 },
-    rotary_oil: { hours_run: 0, next_hours: 0, hours_per_day: 24 },
-  }
-}
 
 // remaining hours + calendar days remaining, frozen at the moment of calculation.
 // 24h/day is the baseline; 12h/day doubles the calendar days needed since the

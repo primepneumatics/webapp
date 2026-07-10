@@ -3,7 +3,7 @@ import { Link, useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { Layout } from '../../components/Layout'
 import { useAuth } from '../../hooks/useAuth'
-import { PART_TYPES, calcRemaining, type PartState, type PartType } from '../../utils/machineParts'
+import { calcRemaining, type PartState } from '../../utils/machineParts'
 
 type Service = {
   id: string
@@ -13,25 +13,23 @@ type Service = {
   customer: { id: string; name: string; org: string; phone: string }
 }
 
+type MachinePart = PartState & { spare_part_id: string; spare_part: { code: string; name: string } }
+
 export function ServiceDetail() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { isAdmin } = useAuth()
   const [service, setService] = useState<Service | null>(null)
-  const [parts, setParts] = useState<Record<PartType, PartState> | null>(null)
+  const [parts, setParts] = useState<MachinePart[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     Promise.all([
       supabase.from('services').select('id, fab_number, model_number, sponsor, customer:customers(id, name, org, phone)').eq('id', id).single(),
-      supabase.from('service_machine_parts').select('*').eq('service_id', id),
+      supabase.from('service_machine_parts').select('*, spare_part:spare_parts(code, name)').eq('service_id', id),
     ]).then(([{ data: svc }, { data: partsData }]) => {
       setService(svc as unknown as Service)
-      if (partsData) {
-        const map = {} as Record<PartType, PartState>
-        for (const p of partsData) map[p.part_type as PartType] = { hours_run: p.hours_run, next_hours: p.next_hours, hours_per_day: p.hours_per_day }
-        setParts(map)
-      }
+      if (partsData) setParts(partsData as unknown as MachinePart[])
       setLoading(false)
     })
   }, [id])
@@ -74,16 +72,19 @@ export function ServiceDetail() {
         )}
 
         <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide mb-3">Spare Part Status</h3>
-        {parts && (
+        {parts.length === 0 ? (
+          <p className="text-xs text-gray-400">No spare parts tracked yet — added when a service report is filed.</p>
+        ) : (
           <div className="space-y-2">
-            {PART_TYPES.map(({ key, label }) => {
-              const p = parts[key]
+            {parts.map(p => {
               const { remainingHours, days } = calcRemaining(p)
               const overdue = remainingHours <= 0
               return (
-                <div key={key} className="bg-white border border-gray-200 rounded-xl p-4">
+                <div key={p.spare_part_id} className="bg-white border border-gray-200 rounded-xl p-4">
                   <div className="flex items-center justify-between mb-1">
-                    <p className="text-sm font-medium text-gray-900">{label}</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      <span className="font-mono text-gray-400 text-xs mr-1">{p.spare_part.code}</span>{p.spare_part.name}
+                    </p>
                     <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${overdue ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
                       {overdue ? 'Overdue' : `${Math.ceil(days)}d left`}
                     </span>

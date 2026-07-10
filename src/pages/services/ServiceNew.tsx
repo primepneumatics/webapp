@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { Layout } from '../../components/Layout'
-import { PART_TYPES, emptyPartState, type PartState, type PartType } from '../../utils/machineParts'
 import { alphanumericOnly } from '../../utils/validate'
 
 export function ServiceNew() {
@@ -14,7 +13,6 @@ export function ServiceNew() {
   const [customerName, setCustomerName] = useState('')
 
   const [form, setForm] = useState({ fab_number: '', model_number: '', sponsor: '' })
-  const [parts, setParts] = useState<Record<PartType, PartState>>(emptyPartState())
 
   useEffect(() => {
     supabase.from('customers').select('name').eq('id', customerId).single().then(({ data }) => {
@@ -34,10 +32,6 @@ export function ServiceNew() {
 
   function setAlphanumeric(field: 'fab_number' | 'model_number') {
     return (e: React.ChangeEvent<HTMLInputElement>) => setForm(f => ({ ...f, [field]: alphanumericOnly(e.target.value) }))
-  }
-
-  function setPart(type: PartType, field: keyof PartState, value: number) {
-    setParts(prev => ({ ...prev, [type]: { ...prev[type], [field]: value } }))
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -63,23 +57,6 @@ export function ServiceNew() {
       return
     }
 
-    const { error: partsError } = await supabase.from('service_machine_parts').insert(
-      PART_TYPES.map(({ key }) => ({
-        service_id: service.id,
-        part_type: key,
-        hours_run: parts[key].hours_run,
-        next_hours: parts[key].next_hours,
-        hours_per_day: parts[key].hours_per_day,
-      }))
-    )
-
-    if (partsError) {
-      setError('Machine saved, but spare part setup failed. Edit the machine to fix it.')
-      setSaving(false)
-      navigate(`/services/${service.id}`)
-      return
-    }
-
     navigate(`/services/${service.id}`)
   }
 
@@ -100,39 +77,6 @@ export function ServiceNew() {
             <Field label="Model Number" value={form.model_number} onChange={setAlphanumeric('model_number')} placeholder="e.g. GA30VSD" />
 
             <Field label="Sponsor" value={form.sponsor} onChange={set('sponsor')} placeholder="Dealer / referrer name" />
-          </div>
-
-          <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
-            <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Spare Part Schedule</h3>
-            <p className="text-xs text-gray-400 -mt-2">Set the starting hours and replacement threshold for each part. Can be left at 0 and configured later.</p>
-            {PART_TYPES.map(({ key, label }) => (
-              <div key={key} className="border-t border-gray-100 pt-3 first:border-t-0 first:pt-0">
-                <p className="text-sm font-medium text-gray-800 mb-2">{label}</p>
-                <div className="grid grid-cols-3 gap-2">
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">Hours Run</label>
-                    <input type="number" min="0" value={parts[key].hours_run}
-                      onChange={e => setPart(key, 'hours_run', parseFloat(e.target.value) || 0)}
-                      className="w-full border border-gray-300 rounded-lg px-2.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">Next Hours</label>
-                    <input type="number" min="0" value={parts[key].next_hours}
-                      onChange={e => setPart(key, 'next_hours', parseFloat(e.target.value) || 0)}
-                      className="w-full border border-gray-300 rounded-lg px-2.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">Hrs/Day</label>
-                    <select value={parts[key].hours_per_day}
-                      onChange={e => setPart(key, 'hours_per_day', parseInt(e.target.value) as 12 | 24)}
-                      className="w-full border border-gray-300 rounded-lg px-2.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                      <option value={12}>12h</option>
-                      <option value={24}>24h</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-            ))}
           </div>
 
           {error && <p className="text-sm text-red-600">{error}</p>}

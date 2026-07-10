@@ -5,11 +5,12 @@ import { Layout } from '../../components/Layout'
 import { SuggestInput } from '../../components/SuggestInput'
 import { useEngineerSuggestions } from '../../hooks/useEngineerSuggestions'
 import { toISODate, toDisplayDate, today } from '../../utils/dateEngine'
-import { PART_TYPES, calcRemaining, addDaysToDate, type PartState, type PartType } from '../../utils/machineParts'
+import { calcRemaining, addDaysToDate, type PartState } from '../../utils/machineParts'
 
 type SparePart = { id: string; code: string; name: string }
 type SelectedSpare = { id: string; code: string; name: string; qty: number }
 type ServiceInfo = { id: string; fab_number: string; model_number: string | null; customer_id: string }
+type TrackedPart = { spare_part_id: string; code: string; name: string; hours_per_day: 12 | 24; remaining_hrs: string; maintenance_days: string }
 
 export function ReportNew() {
   const { id: serviceId } = useParams<{ id: string }>()
@@ -25,16 +26,11 @@ export function ReportNew() {
   const [spareId, setSpareId] = useState('')
   const [spareQty, setSpareQty] = useState('1')
 
-  const [parts, setParts] = useState<Record<PartType, PartState> | null>(null)
-  const [remainingHrs, setRemainingHrs] = useState<Record<PartType, string>>(() =>
-    Object.fromEntries(PART_TYPES.map(({ key }) => [key, '0'])) as Record<PartType, string>
-  )
+  const [trackedParts, setTrackedParts] = useState<TrackedPart[]>([])
+  const [trackPartId, setTrackPartId] = useState('')
 
   const [reportDate, setReportDate] = useState(today())
   const [totalRunHours, setTotalRunHours] = useState('')
-  const [maintenanceDays, setMaintenanceDays] = useState<Record<PartType, string>>(() =>
-    Object.fromEntries(PART_TYPES.map(({ key }) => [key, '0'])) as Record<PartType, string>
-  )
   const [remarks, setRemarks] = useState('')
   const [servicedBy, setServicedBy] = useState('')
 
@@ -44,30 +40,21 @@ export function ReportNew() {
     supabase.from('spare_parts').select('id, code, name').order('code').then(({ data }) => {
       if (data) setSpareParts(data)
     })
-    supabase.from('service_machine_parts').select('*').eq('service_id', serviceId).then(({ data }) => {
-      if (data) {
-        const map = {} as Record<PartType, PartState>
-        const remaining = {} as Record<PartType, string>
-        for (const p of data) {
-          map[p.part_type as PartType] = { hours_run: p.hours_run, next_hours: p.next_hours, hours_per_day: p.hours_per_day }
-          remaining[p.part_type as PartType] = String(Math.max(0, p.next_hours - p.hours_run))
-        }
-        setParts(map)
-        setRemainingHrs(prev => ({ ...prev, ...remaining }))
-      }
-    })
   }, [serviceId])
 
-  function setPart(type: PartType, field: keyof PartState, value: number) {
-    setParts(prev => prev ? { ...prev, [type]: { ...prev[type], [field]: value } } : prev)
+  function addTrackedPart() {
+    const part = spareParts.find(p => p.id === trackPartId)
+    if (!part || trackedParts.some(tp => tp.spare_part_id === part.id)) return
+    setTrackedParts(prev => [...prev, { spare_part_id: part.id, code: part.code, name: part.name, hours_per_day: 24, remaining_hrs: '0', maintenance_days: '0' }])
+    setTrackPartId('')
   }
 
-  function setPartRemaining(type: PartType, value: string) {
-    setRemainingHrs(prev => ({ ...prev, [type]: value }))
+  function removeTrackedPart(spare_part_id: string) {
+    setTrackedParts(prev => prev.filter(tp => tp.spare_part_id !== spare_part_id))
   }
 
-  function setPartMaintenanceDays(type: PartType, value: string) {
-    setMaintenanceDays(prev => ({ ...prev, [type]: value }))
+  function updateTrackedPart(spare_part_id: string, field: 'hours_per_day' | 'remaining_hrs' | 'maintenance_days', value: string | number) {
+    setTrackedParts(prev => prev.map(tp => tp.spare_part_id === spare_part_id ? { ...tp, [field]: value } : tp))
   }
 
   function addSpare() {
@@ -85,7 +72,7 @@ export function ReportNew() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!parts || !service) return
+    if (!service) return
     setError('')
     setSaving(true)
 
@@ -94,15 +81,15 @@ export function ReportNew() {
     const hoursRun = parseFloat(totalRunHours) || 0
 
     let earliestDue: Date | null = null
-    const snapshotRows = PART_TYPES.map(({ key }) => {
-      const remaining = Math.max(0, parseFloat(remainingHrs[key]) || 0)
-      const p: PartState = { hours_run: hoursRun, next_hours: hoursRun + remaining, hours_per_day: parts[key].hours_per_day }
-      const offDays = Math.max(0, parseInt(maintenanceDays[key]) || 0)
+    const snapshotRows = trackedParts.map(tp => {
+      const remaining = Math.max(0, parseFloat(tp.remaining_hrs) || 0)
+      const p: PartState = { hours_run: hoursRun, next_hours: hoursRun + remaining, hours_per_day: tp.hours_per_day }
+      const offDays = Math.max(0, parseInt(tp.maintenance_days) || 0)
       const { remainingHours, days } = calcRemaining(p)
       const dueDate = addDaysToDate(new Date(reportDate), Math.max(0, days) + offDays)
       if (!earliestDue || dueDate < earliestDue) earliestDue = dueDate
       return {
-        part_type: key,
+        spare_part_id: tp.spare_part_id,
         hours_run: p.hours_run,
         next_hours: p.next_hours,
         hours_per_day: p.hours_per_day,
@@ -117,7 +104,7 @@ export function ReportNew() {
       .insert({
         service_id: serviceId,
         report_date: reportDate,
-        total_run_hours: parseFloat(totalRunHours) || 0,
+        total_run_hours: hoursRun,
         remarks,
         serviced_by: servicedBy.trim() || null,
         selected_spares: selectedSpares,
@@ -133,34 +120,36 @@ export function ReportNew() {
       return
     }
 
-    const { error: partsError } = await supabase.from('service_report_parts').insert(
-      snapshotRows.map(r => ({ ...r, service_report_id: report.id }))
-    )
-    if (partsError) {
-      setError('Report saved, but spare part snapshot failed to save.')
-      setSaving(false)
-      return
-    }
+    if (snapshotRows.length > 0) {
+      const { error: partsError } = await supabase.from('service_report_parts').insert(
+        snapshotRows.map(r => ({ ...r, service_report_id: report.id }))
+      )
+      if (partsError) {
+        setError('Report saved, but spare part snapshot failed to save.')
+        setSaving(false)
+        return
+      }
 
-    await supabase.from('service_machine_parts').upsert(
-      PART_TYPES.map(({ key }) => {
-        const remaining = Math.max(0, parseFloat(remainingHrs[key]) || 0)
-        return {
-          service_id: serviceId,
-          part_type: key,
-          hours_run: hoursRun,
-          next_hours: hoursRun + remaining,
-          hours_per_day: parts[key].hours_per_day,
-          updated_at: new Date().toISOString(),
-        }
-      }),
-      { onConflict: 'service_id,part_type' }
-    )
+      await supabase.from('service_machine_parts').upsert(
+        trackedParts.map(tp => {
+          const remaining = Math.max(0, parseFloat(tp.remaining_hrs) || 0)
+          return {
+            service_id: serviceId,
+            spare_part_id: tp.spare_part_id,
+            hours_run: hoursRun,
+            next_hours: hoursRun + remaining,
+            hours_per_day: tp.hours_per_day,
+            updated_at: new Date().toISOString(),
+          }
+        }),
+        { onConflict: 'service_id,spare_part_id' }
+      )
+    }
 
     navigate(`/reports/${report.id}`)
   }
 
-  if (!service || !parts) return <Layout><p className="text-gray-400 text-sm">Loading...</p></Layout>
+  if (!service) return <Layout><p className="text-gray-400 text-sm">Loading...</p></Layout>
 
   return (
     <Layout>
@@ -192,51 +181,75 @@ export function ReportNew() {
             </div>
           </div>
 
-          {/* Spare items block */}
-          <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-5">
+          {/* Spare item hours — dynamic, add from the spare parts list */}
+          <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
             <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Spare Item Hours</h3>
-            {PART_TYPES.map(({ key, label }) => {
-              const hoursRunPreview = parseFloat(totalRunHours) || 0
-              const remainingPreview = Math.max(0, parseFloat(remainingHrs[key]) || 0)
-              const effective: PartState = { hours_run: hoursRunPreview, next_hours: hoursRunPreview + remainingPreview, hours_per_day: parts[key].hours_per_day }
-              const { remainingHours, days } = calcRemaining(effective)
-              const overdue = remainingHours <= 0
-              const offDays = Math.max(0, parseInt(maintenanceDays[key]) || 0)
-              return (
-                <div key={key} className="border-t border-gray-100 pt-4 first:border-t-0 first:pt-0">
-                  <p className="text-sm font-medium text-gray-800 mb-2">{label}</p>
-                  <div className="grid grid-cols-2 gap-2 mb-2">
-                    <div>
-                      <label className="block text-xs text-gray-500 mb-1">Remaining Hrs</label>
-                      <input type="number" min="0" value={remainingHrs[key]}
-                        onChange={e => setPartRemaining(key, e.target.value)}
+            <div className="flex gap-2">
+              <select value={trackPartId} onChange={e => setTrackPartId(e.target.value)}
+                className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <option value="">Select spare part...</option>
+                {spareParts.filter(p => !trackedParts.some(tp => tp.spare_part_id === p.id)).map(p => (
+                  <option key={p.id} value={p.id}>{p.code} — {p.name}</option>
+                ))}
+              </select>
+              <button type="button" onClick={addTrackedPart} disabled={!trackPartId}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-40">
+                + Add
+              </button>
+            </div>
+
+            {trackedParts.length === 0 ? (
+              <p className="text-xs text-gray-400">No spare parts added for this report yet.</p>
+            ) : (
+              trackedParts.map(tp => {
+                const hoursRunPreview = parseFloat(totalRunHours) || 0
+                const remainingPreview = Math.max(0, parseFloat(tp.remaining_hrs) || 0)
+                const effective: PartState = { hours_run: hoursRunPreview, next_hours: hoursRunPreview + remainingPreview, hours_per_day: tp.hours_per_day }
+                const { remainingHours, days } = calcRemaining(effective)
+                const overdue = remainingHours <= 0
+                const offDays = Math.max(0, parseInt(tp.maintenance_days) || 0)
+                return (
+                  <div key={tp.spare_part_id} className="border-t border-gray-100 pt-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <p className="text-sm font-medium text-gray-800">
+                        <span className="font-mono text-gray-400 text-xs mr-1">{tp.code}</span>{tp.name}
+                      </p>
+                      <button type="button" onClick={() => removeTrackedPart(tp.spare_part_id)}
+                        className="text-red-400 hover:text-red-600 text-xs">×</button>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2 mb-2">
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Remaining Hrs</label>
+                        <input type="number" min="0" value={tp.remaining_hrs}
+                          onChange={e => updateTrackedPart(tp.spare_part_id, 'remaining_hrs', e.target.value)}
+                          className="w-full border border-gray-300 rounded-lg px-2.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Hrs/Day</label>
+                        <select value={tp.hours_per_day}
+                          onChange={e => updateTrackedPart(tp.spare_part_id, 'hours_per_day', parseInt(e.target.value) as 12 | 24)}
+                          className="w-full border border-gray-300 rounded-lg px-2.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                          <option value={12}>12h</option>
+                          <option value={24}>24h</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div className="mb-2">
+                      <label className="block text-xs text-gray-500 mb-1">Maintenance Days</label>
+                      <input type="number" min="0" value={tp.maintenance_days}
+                        onChange={e => updateTrackedPart(tp.spare_part_id, 'maintenance_days', e.target.value)}
                         className="w-full border border-gray-300 rounded-lg px-2.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                      <p className="text-xs text-gray-400 mt-1">Planned off days for this part (e.g. plant shutdown), added on top of its calculated due date.</p>
                     </div>
-                    <div>
-                      <label className="block text-xs text-gray-500 mb-1">Hrs/Day</label>
-                      <select value={parts[key].hours_per_day}
-                        onChange={e => setPart(key, 'hours_per_day', parseInt(e.target.value) as 12 | 24)}
-                        className="w-full border border-gray-300 rounded-lg px-2.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value={12}>12h</option>
-                        <option value={24}>24h</option>
-                      </select>
-                    </div>
+                    <p className={`text-xs ${overdue ? 'text-red-600 font-medium' : 'text-blue-600'}`}>
+                      {overdue
+                        ? `Overdue by ${Math.abs(remainingHours)} hrs`
+                        : `${remainingHours} hrs remaining · ~${Math.ceil(days)} days · due ${toDisplayDate(toISODate(addDaysToDate(new Date(reportDate), days + offDays)))}`}
+                    </p>
                   </div>
-                  <div className="mb-2">
-                    <label className="block text-xs text-gray-500 mb-1">Maintenance Days</label>
-                    <input type="number" min="0" value={maintenanceDays[key]}
-                      onChange={e => setPartMaintenanceDays(key, e.target.value)}
-                      className="w-full border border-gray-300 rounded-lg px-2.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                    <p className="text-xs text-gray-400 mt-1">Planned off days for this part (e.g. plant shutdown), added on top of its calculated due date.</p>
-                  </div>
-                  <p className={`text-xs ${overdue ? 'text-red-600 font-medium' : 'text-blue-600'}`}>
-                    {overdue
-                      ? `Overdue by ${Math.abs(remainingHours)} hrs`
-                      : `${remainingHours} hrs remaining · ~${Math.ceil(days)} days · due ${toDisplayDate(toISODate(addDaysToDate(new Date(reportDate), days + offDays)))}`}
-                  </p>
-                </div>
-              )
-            })}
+                )
+              })
+            )}
           </div>
 
           {/* Spare Parts Used */}

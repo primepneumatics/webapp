@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { Layout } from '../../components/Layout'
-import { PART_TYPES, emptyPartState, type PartState, type PartType } from '../../utils/machineParts'
 import { alphanumericOnly } from '../../utils/validate'
 
 type Form = { fab_number: string; model_number: string; sponsor: string }
@@ -11,31 +10,18 @@ export function ServiceEdit() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const [form, setForm] = useState<Form>({ fab_number: '', model_number: '', sponsor: '' })
-  const [parts, setParts] = useState<Record<PartType, PartState>>(emptyPartState())
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [fabError, setFabError] = useState('')
 
   useEffect(() => {
-    Promise.all([
-      supabase.from('services').select('*').eq('id', id).single(),
-      supabase.from('service_machine_parts').select('*').eq('service_id', id),
-    ]).then(([{ data: svc }, { data: partsData }]) => {
+    supabase.from('services').select('*').eq('id', id).single().then(({ data: svc }) => {
       if (svc) {
         setForm({
           fab_number: svc.fab_number || '',
           model_number: svc.model_number || '',
           sponsor: svc.sponsor || '',
-        })
-      }
-      if (partsData) {
-        setParts(prev => {
-          const next = { ...prev }
-          for (const p of partsData) {
-            next[p.part_type as PartType] = { hours_run: p.hours_run, next_hours: p.next_hours, hours_per_day: p.hours_per_day }
-          }
-          return next
         })
       }
       setLoading(false)
@@ -54,10 +40,6 @@ export function ServiceEdit() {
 
   function setAlphanumeric(field: 'fab_number' | 'model_number') {
     return (e: React.ChangeEvent<HTMLInputElement>) => setForm(f => ({ ...f, [field]: alphanumericOnly(e.target.value) }))
-  }
-
-  function setPart(type: PartType, field: keyof PartState, value: number) {
-    setParts(prev => ({ ...prev, [type]: { ...prev[type], [field]: value } }))
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -82,24 +64,6 @@ export function ServiceEdit() {
       return
     }
 
-    const { error: partsError } = await supabase.from('service_machine_parts').upsert(
-      PART_TYPES.map(({ key }) => ({
-        service_id: id,
-        part_type: key,
-        hours_run: parts[key].hours_run,
-        next_hours: parts[key].next_hours,
-        hours_per_day: parts[key].hours_per_day,
-        updated_at: new Date().toISOString(),
-      })),
-      { onConflict: 'service_id,part_type' }
-    )
-
-    if (partsError) {
-      setError('Machine saved, but spare part schedule failed to save.')
-      setSaving(false)
-      return
-    }
-
     navigate(`/services/${id}`)
   }
 
@@ -119,38 +83,6 @@ export function ServiceEdit() {
             <Field label="Model Number" value={form.model_number} onChange={setAlphanumeric('model_number')} />
 
             <Field label="Sponsor" value={form.sponsor} onChange={set('sponsor')} />
-          </div>
-
-          <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
-            <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Spare Part Schedule</h3>
-            {PART_TYPES.map(({ key, label }) => (
-              <div key={key} className="border-t border-gray-100 pt-3 first:border-t-0 first:pt-0">
-                <p className="text-sm font-medium text-gray-800 mb-2">{label}</p>
-                <div className="grid grid-cols-3 gap-2">
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">Hours Run</label>
-                    <input type="number" min="0" value={parts[key].hours_run}
-                      onChange={e => setPart(key, 'hours_run', parseFloat(e.target.value) || 0)}
-                      className="w-full border border-gray-300 rounded-lg px-2.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">Next Hours</label>
-                    <input type="number" min="0" value={parts[key].next_hours}
-                      onChange={e => setPart(key, 'next_hours', parseFloat(e.target.value) || 0)}
-                      className="w-full border border-gray-300 rounded-lg px-2.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-gray-500 mb-1">Hrs/Day</label>
-                    <select value={parts[key].hours_per_day}
-                      onChange={e => setPart(key, 'hours_per_day', parseInt(e.target.value) as 12 | 24)}
-                      className="w-full border border-gray-300 rounded-lg px-2.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                      <option value={12}>12h</option>
-                      <option value={24}>24h</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-            ))}
           </div>
 
           {error && <p className="text-sm text-red-600">{error}</p>}
