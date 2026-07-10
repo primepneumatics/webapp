@@ -6,6 +6,7 @@ import { SuggestInput } from '../../components/SuggestInput'
 import { useEngineerSuggestions } from '../../hooks/useEngineerSuggestions'
 import { toISODate, toDisplayDate, today } from '../../utils/dateEngine'
 import { calcRemaining, addDaysToDate, type PartState } from '../../utils/machineParts'
+import { alphanumericOnly } from '../../utils/validate'
 
 type SparePart = { id: string; code: string; name: string }
 type SelectedSpare = { id: string; code: string; name: string; qty: number }
@@ -31,16 +32,24 @@ export function ReportNew() {
 
   const [reportDate, setReportDate] = useState(today())
   const [totalRunHours, setTotalRunHours] = useState('')
+  const [fabNumber, setFabNumber] = useState('')
+  const [fabError, setFabError] = useState('')
   const [remarks, setRemarks] = useState('')
   const [servicedBy, setServicedBy] = useState('')
 
   useEffect(() => {
     supabase.from('services').select('id, fab_number, model_number, customer_id').eq('id', serviceId).single()
-      .then(({ data }) => { if (data) setService(data) })
+      .then(({ data }) => { if (data) { setService(data); setFabNumber(data.fab_number) } })
     supabase.from('spare_parts').select('id, code, name').order('code').then(({ data }) => {
       if (data) setSpareParts(data)
     })
   }, [serviceId])
+
+  async function checkFab() {
+    if (!service || !fabNumber || fabNumber === service.fab_number) { setFabError(''); return }
+    const { data } = await supabase.from('services').select('id').eq('fab_number', fabNumber).neq('id', service.id).maybeSingle()
+    setFabError(data ? 'A machine with this FAB Number already exists.' : '')
+  }
 
   function addTrackedPart() {
     const part = spareParts.find(p => p.id === trackPartId)
@@ -72,9 +81,21 @@ export function ReportNew() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!service) return
+    if (!service || fabError || !fabNumber.trim()) return
     setError('')
     setSaving(true)
+
+    if (fabNumber.trim() !== service.fab_number) {
+      const { error: fabUpdateError } = await supabase
+        .from('services')
+        .update({ fab_number: fabNumber.trim(), updated_at: new Date().toISOString() })
+        .eq('id', service.id)
+      if (fabUpdateError) {
+        setError(fabUpdateError.code === '23505' ? 'A machine with this FAB Number already exists.' : 'Failed to update FAB number.')
+        setSaving(false)
+        return
+      }
+    }
 
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -171,8 +192,14 @@ export function ReportNew() {
                 className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">FAB Number</label>
-              <p className="text-sm text-gray-500 font-mono py-2">{service.fab_number}</p>
+              <label className="block text-sm font-medium text-gray-700 mb-1">FAB Number *</label>
+              <input type="text" value={fabNumber} onChange={e => setFabNumber(alphanumericOnly(e.target.value))} onBlur={checkFab} required
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              {fabError ? (
+                <p className="text-xs text-red-600 mt-1">{fabError}</p>
+              ) : (
+                <p className="text-xs text-gray-400 mt-1">Tied to this machine — changing it here updates the machine's FAB Number too.</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Total Run Hours *</label>
