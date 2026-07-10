@@ -78,11 +78,11 @@ export function ReportView() {
   if (!report) return <Layout><p className="text-red-500 text-sm">Report not found.</p></Layout>
 
   const reportCard = (
-    <div ref={printRef} className="bg-white p-8 print:p-0 print:pb-2 space-y-4">
+    <div ref={printRef} className="bg-white p-8 print:p-0 print:pb-2">
       {/* Header */}
-      <div className="flex items-end justify-between pb-4 border-b-2 border-gray-900">
+      <div className="flex items-end justify-between pb-4 mb-4 border-b-2 border-gray-900">
         <div>
-          <img src="/logo.png" alt="Prime Pneumatics & Consultants" className="h-10 w-auto mb-1" />
+          <img src="/logo.png" alt="Prime Pneumatics & Consultants" width={172} height={40} className="h-10 w-auto mb-1" />
           <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Service Report</p>
         </div>
         {report.report_number && (
