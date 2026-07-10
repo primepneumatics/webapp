@@ -3,7 +3,7 @@ export type PartType = 'air_filter' | 'oil_filter' | 'separator' | 'rotary_oil'
 export const PART_TYPES: { key: PartType; label: string }[] = [
   { key: 'air_filter', label: 'Air Filter' },
   { key: 'oil_filter', label: 'Oil Filter' },
-  { key: 'separator', label: 'Separator' },
+  { key: 'separator', label: 'Oil Separator' },
   { key: 'rotary_oil', label: 'Rotary Oil' },
 ]
 

@@ -5,8 +5,6 @@ import { Layout } from '../../components/Layout'
 import { PART_TYPES, emptyPartState, type PartState, type PartType } from '../../utils/machineParts'
 import { alphanumericOnly } from '../../utils/validate'
 
-type SparePart = { id: string; code: string; name: string }
-
 export function ServiceNew() {
   const { id: customerId } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -14,8 +12,6 @@ export function ServiceNew() {
   const [error, setError] = useState('')
   const [fabError, setFabError] = useState('')
   const [customerName, setCustomerName] = useState('')
-  const [spareParts, setSpareParts] = useState<SparePart[]>([])
-  const [selectedSpareIds, setSelectedSpareIds] = useState<string[]>([])
 
   const [form, setForm] = useState({ fab_number: '', model_number: '', sponsor: '' })
   const [parts, setParts] = useState<Record<PartType, PartState>>(emptyPartState())
@@ -23,9 +19,6 @@ export function ServiceNew() {
   useEffect(() => {
     supabase.from('customers').select('name').eq('id', customerId).single().then(({ data }) => {
       if (data) setCustomerName(data.name)
-    })
-    supabase.from('spare_parts').select('id, code, name').order('code').then(({ data }) => {
-      if (data) setSpareParts(data)
     })
   }, [customerId])
 
@@ -47,10 +40,6 @@ export function ServiceNew() {
     setParts(prev => ({ ...prev, [type]: { ...prev[type], [field]: value } }))
   }
 
-  function toggleSpare(id: string) {
-    setSelectedSpareIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id])
-  }
-
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (fabError || !form.fab_number.trim()) return
@@ -64,7 +53,6 @@ export function ServiceNew() {
         fab_number: form.fab_number.trim(),
         model_number: form.model_number.trim() || null,
         sponsor: form.sponsor.trim() || null,
-        spare_part_ids: selectedSpareIds,
       })
       .select('id')
       .single()
@@ -112,25 +100,6 @@ export function ServiceNew() {
             <Field label="Model Number" value={form.model_number} onChange={setAlphanumeric('model_number')} placeholder="e.g. GA30VSD" />
 
             <Field label="Sponsor" value={form.sponsor} onChange={set('sponsor')} placeholder="Dealer / referrer name" />
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Spares Required</label>
-              {spareParts.length === 0 ? (
-                <p className="text-xs text-gray-400">No spare parts in master list yet. Add them via Admin → Spare Parts.</p>
-              ) : (
-                <div className="border border-gray-300 rounded-lg p-3 space-y-2 max-h-48 overflow-y-auto">
-                  {spareParts.map(p => (
-                    <label key={p.id} className="flex items-center gap-2 cursor-pointer">
-                      <input type="checkbox" checked={selectedSpareIds.includes(p.id)} onChange={() => toggleSpare(p.id)}
-                        className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
-                      <span className="text-sm text-gray-700">
-                        <span className="font-mono text-gray-400 text-xs mr-1">{p.code}</span>{p.name}
-                      </span>
-                    </label>
-                  ))}
-                </div>
-              )}
-            </div>
           </div>
 
           <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
