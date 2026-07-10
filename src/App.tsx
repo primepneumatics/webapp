@@ -28,11 +28,11 @@ export default function App() {
 
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
 
-        <Route path="/customers" element={<ProtectedRoute><CustomerList /></ProtectedRoute>} />
+        <Route path="/customers" element={<ProtectedRoute adminOnly><CustomerList /></ProtectedRoute>} />
         <Route path="/customers/new" element={<ProtectedRoute adminOnly><CustomerNew /></ProtectedRoute>} />
-        <Route path="/customers/:id" element={<ProtectedRoute><CustomerDetail /></ProtectedRoute>} />
+        <Route path="/customers/:id" element={<ProtectedRoute adminOnly><CustomerDetail /></ProtectedRoute>} />
         <Route path="/customers/:id/edit" element={<ProtectedRoute adminOnly><CustomerEdit /></ProtectedRoute>} />
-        <Route path="/customers/:id/services/new" element={<ProtectedRoute><ServiceNew /></ProtectedRoute>} />
+        <Route path="/customers/:id/services/new" element={<ProtectedRoute adminOnly><ServiceNew /></ProtectedRoute>} />
 
         <Route path="/services/:id" element={<ProtectedRoute><ServiceDetail /></ProtectedRoute>} />
         <Route path="/services/:id/edit" element={<ProtectedRoute adminOnly><ServiceEdit /></ProtectedRoute>} />

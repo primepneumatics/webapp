@@ -17,7 +17,6 @@ type Service = {
   id: string
   fab_number: string
   model_number: string | null
-  assigned_engineer: string | null
 }
 
 export function CustomerDetail() {
@@ -31,7 +30,7 @@ export function CustomerDetail() {
   useEffect(() => {
     Promise.all([
       supabase.from('customers').select('*').eq('id', id).single(),
-      supabase.from('services').select('id, fab_number, model_number, assigned_engineer').eq('customer_id', id).order('fab_number'),
+      supabase.from('services').select('id, fab_number, model_number').eq('customer_id', id).order('fab_number'),
     ]).then(([{ data: cust }, { data: svc }]) => {
       setCustomer(cust)
       if (svc) setServices(svc)
@@ -108,7 +107,7 @@ export function CustomerDetail() {
                 <div className="min-w-0">
                   <p className="font-mono text-sm font-semibold text-gray-900">{s.fab_number}</p>
                   <p className="text-xs text-gray-500 mt-0.5">
-                    {s.model_number || 'No model set'}{s.assigned_engineer ? ` · ${s.assigned_engineer}` : ''}
+                    {s.model_number || 'No model set'}
                   </p>
                 </div>
                 <span className="text-gray-300 text-xl ml-3 shrink-0">&#8250;</span>

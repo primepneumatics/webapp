@@ -2,19 +2,16 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { Layout } from '../../components/Layout'
-import { SuggestInput } from '../../components/SuggestInput'
-import { useEngineerSuggestions } from '../../hooks/useEngineerSuggestions'
 import { PART_TYPES, emptyPartState, type PartState, type PartType } from '../../utils/machineParts'
 import { alphanumericOnly } from '../../utils/validate'
 
 type SparePart = { id: string; code: string; name: string }
-type Form = { fab_number: string; model_number: string; assigned_engineer: string; sponsor: string }
+type Form = { fab_number: string; model_number: string; sponsor: string }
 
 export function ServiceEdit() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const engineerSuggestions = useEngineerSuggestions()
-  const [form, setForm] = useState<Form>({ fab_number: '', model_number: '', assigned_engineer: '', sponsor: '' })
+  const [form, setForm] = useState<Form>({ fab_number: '', model_number: '', sponsor: '' })
   const [parts, setParts] = useState<Record<PartType, PartState>>(emptyPartState())
   const [spareParts, setSpareParts] = useState<SparePart[]>([])
   const [selectedSpareIds, setSelectedSpareIds] = useState<string[]>([])
@@ -33,7 +30,6 @@ export function ServiceEdit() {
         setForm({
           fab_number: svc.fab_number || '',
           model_number: svc.model_number || '',
-          assigned_engineer: svc.assigned_engineer || '',
           sponsor: svc.sponsor || '',
         })
         setSelectedSpareIds(svc.spare_part_ids ?? [])
@@ -85,7 +81,6 @@ export function ServiceEdit() {
       .update({
         fab_number: form.fab_number.trim(),
         model_number: form.model_number.trim() || null,
-        assigned_engineer: form.assigned_engineer.trim() || null,
         sponsor: form.sponsor.trim() || null,
         spare_part_ids: selectedSpareIds,
         updated_at: new Date().toISOString(),
@@ -133,12 +128,6 @@ export function ServiceEdit() {
           <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
             <Field label="FAB Number *" value={form.fab_number} onChange={setAlphanumeric('fab_number')} onBlur={checkFab} required error={fabError} />
             <Field label="Model Number" value={form.model_number} onChange={setAlphanumeric('model_number')} />
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Assigned Engineer</label>
-              <SuggestInput value={form.assigned_engineer} onChange={v => setForm(f => ({ ...f, assigned_engineer: v }))}
-                suggestions={engineerSuggestions} placeholder="Type a name..." />
-            </div>
 
             <Field label="Sponsor" value={form.sponsor} onChange={set('sponsor')} />
 

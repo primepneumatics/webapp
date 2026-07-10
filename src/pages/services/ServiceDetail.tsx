@@ -9,7 +9,6 @@ type Service = {
   id: string
   fab_number: string
   model_number: string | null
-  assigned_engineer: string | null
   sponsor: string | null
   customer: { id: string; name: string; org: string; phone: string }
 }
@@ -24,7 +23,7 @@ export function ServiceDetail() {
 
   useEffect(() => {
     Promise.all([
-      supabase.from('services').select('id, fab_number, model_number, assigned_engineer, sponsor, customer:customers(id, name, org, phone)').eq('id', id).single(),
+      supabase.from('services').select('id, fab_number, model_number, sponsor, customer:customers(id, name, org, phone)').eq('id', id).single(),
       supabase.from('service_machine_parts').select('*').eq('service_id', id),
     ]).then(([{ data: svc }, { data: partsData }]) => {
       setService(svc as unknown as Service)
@@ -44,7 +43,7 @@ export function ServiceDetail() {
     <Layout>
       <div className="max-w-xl">
         <div className="flex items-center gap-3 mb-6">
-          <button onClick={() => navigate(`/customers/${service.customer.id}`)} className="text-gray-400 hover:text-gray-600">← Back</button>
+          <button onClick={() => navigate(-1)} className="text-gray-400 hover:text-gray-600">← Back</button>
           <div>
             <h2 className="text-xl font-semibold text-gray-900 font-mono">{service.fab_number}</h2>
             <p className="text-sm text-gray-500">{service.customer.org || service.customer.name}</p>
@@ -53,7 +52,6 @@ export function ServiceDetail() {
 
         <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4 mb-4">
           <Row label="Model Number" value={service.model_number} />
-          <Row label="Assigned Engineer" value={service.assigned_engineer} />
           <Row label="Sponsor" value={service.sponsor} />
         </div>
 

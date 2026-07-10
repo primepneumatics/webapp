@@ -2,8 +2,6 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { Layout } from '../../components/Layout'
-import { SuggestInput } from '../../components/SuggestInput'
-import { useEngineerSuggestions } from '../../hooks/useEngineerSuggestions'
 import { PART_TYPES, emptyPartState, type PartState, type PartType } from '../../utils/machineParts'
 import { alphanumericOnly } from '../../utils/validate'
 
@@ -12,7 +10,6 @@ type SparePart = { id: string; code: string; name: string }
 export function ServiceNew() {
   const { id: customerId } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const engineerSuggestions = useEngineerSuggestions()
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [fabError, setFabError] = useState('')
@@ -20,7 +17,7 @@ export function ServiceNew() {
   const [spareParts, setSpareParts] = useState<SparePart[]>([])
   const [selectedSpareIds, setSelectedSpareIds] = useState<string[]>([])
 
-  const [form, setForm] = useState({ fab_number: '', model_number: '', assigned_engineer: '', sponsor: '' })
+  const [form, setForm] = useState({ fab_number: '', model_number: '', sponsor: '' })
   const [parts, setParts] = useState<Record<PartType, PartState>>(emptyPartState())
 
   useEffect(() => {
@@ -66,7 +63,6 @@ export function ServiceNew() {
         customer_id: customerId,
         fab_number: form.fab_number.trim(),
         model_number: form.model_number.trim() || null,
-        assigned_engineer: form.assigned_engineer.trim() || null,
         sponsor: form.sponsor.trim() || null,
         spare_part_ids: selectedSpareIds,
       })
@@ -114,12 +110,6 @@ export function ServiceNew() {
           <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
             <Field label="FAB Number *" value={form.fab_number} onChange={setAlphanumeric('fab_number')} onBlur={checkFab} required error={fabError} placeholder="e.g. FAB2K91A" />
             <Field label="Model Number" value={form.model_number} onChange={setAlphanumeric('model_number')} placeholder="e.g. GA30VSD" />
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Assigned Engineer</label>
-              <SuggestInput value={form.assigned_engineer} onChange={v => setForm(f => ({ ...f, assigned_engineer: v }))}
-                suggestions={engineerSuggestions} placeholder="Type a name..." />
-            </div>
 
             <Field label="Sponsor" value={form.sponsor} onChange={set('sponsor')} placeholder="Dealer / referrer name" />
 
