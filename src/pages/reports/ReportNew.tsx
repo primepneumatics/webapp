@@ -9,9 +9,8 @@ import { calcRemaining, addDaysToDate, type PartState } from '../../utils/machin
 import { alphanumericOnly } from '../../utils/validate'
 
 type SparePart = { id: string; code: string; name: string }
-type SelectedSpare = { id: string; code: string; name: string; qty: number }
 type ServiceInfo = { id: string; fab_number: string; model_number: string | null; customer_id: string }
-type TrackedPart = { spare_part_id: string; code: string; name: string; hours_per_day: 12 | 24; remaining_hrs: string; maintenance_days: string }
+type TrackedPart = { spare_part_id: string; code: string; name: string; qty: string; hours_per_day: 12 | 24; remaining_hrs: string; maintenance_days: string }
 
 export function ReportNew() {
   const { id: serviceId } = useParams<{ id: string }>()
@@ -23,9 +22,6 @@ export function ReportNew() {
   const [error, setError] = useState('')
 
   const [spareParts, setSpareParts] = useState<SparePart[]>([])
-  const [selectedSpares, setSelectedSpares] = useState<SelectedSpare[]>([])
-  const [spareId, setSpareId] = useState('')
-  const [spareQty, setSpareQty] = useState('1')
 
   const [trackedParts, setTrackedParts] = useState<TrackedPart[]>([])
   const [trackPartId, setTrackPartId] = useState('')
@@ -54,7 +50,7 @@ export function ReportNew() {
   function addTrackedPart() {
     const part = spareParts.find(p => p.id === trackPartId)
     if (!part || trackedParts.some(tp => tp.spare_part_id === part.id)) return
-    setTrackedParts(prev => [...prev, { spare_part_id: part.id, code: part.code, name: part.name, hours_per_day: 24, remaining_hrs: '0', maintenance_days: '0' }])
+    setTrackedParts(prev => [...prev, { spare_part_id: part.id, code: part.code, name: part.name, qty: '1', hours_per_day: 24, remaining_hrs: '0', maintenance_days: '0' }])
     setTrackPartId('')
   }
 
@@ -62,21 +58,8 @@ export function ReportNew() {
     setTrackedParts(prev => prev.filter(tp => tp.spare_part_id !== spare_part_id))
   }
 
-  function updateTrackedPart(spare_part_id: string, field: 'hours_per_day' | 'remaining_hrs' | 'maintenance_days', value: string | number) {
+  function updateTrackedPart(spare_part_id: string, field: 'qty' | 'hours_per_day' | 'remaining_hrs' | 'maintenance_days', value: string | number) {
     setTrackedParts(prev => prev.map(tp => tp.spare_part_id === spare_part_id ? { ...tp, [field]: value } : tp))
-  }
-
-  function addSpare() {
-    const part = spareParts.find(p => p.id === spareId)
-    if (!part) return
-    const qty = Math.max(1, parseInt(spareQty) || 1)
-    setSelectedSpares(prev => {
-      const existing = prev.findIndex(s => s.id === part.id)
-      if (existing >= 0) return prev.map((s, i) => i === existing ? { ...s, qty: s.qty + qty } : s)
-      return [...prev, { id: part.id, code: part.code, name: part.name, qty }]
-    })
-    setSpareId('')
-    setSpareQty('1')
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -111,6 +94,7 @@ export function ReportNew() {
       if (!earliestDue || dueDate < earliestDue) earliestDue = dueDate
       return {
         spare_part_id: tp.spare_part_id,
+        qty: Math.max(1, parseInt(tp.qty) || 1),
         hours_run: p.hours_run,
         next_hours: p.next_hours,
         hours_per_day: p.hours_per_day,
@@ -128,7 +112,6 @@ export function ReportNew() {
         total_run_hours: hoursRun,
         remarks,
         serviced_by: servicedBy.trim() || null,
-        selected_spares: selectedSpares,
         due_service_date: earliestDue ? toISODate(earliestDue) : null,
         filed_by_id: user?.id ?? null,
       })
@@ -244,7 +227,13 @@ export function ReportNew() {
                       <button type="button" onClick={() => removeTrackedPart(tp.spare_part_id)}
                         className="text-red-400 hover:text-red-600 text-xs">×</button>
                     </div>
-                    <div className="grid grid-cols-2 gap-2 mb-2">
+                    <div className="grid grid-cols-3 gap-2 mb-2">
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Qty</label>
+                        <input type="number" min="1" value={tp.qty}
+                          onChange={e => updateTrackedPart(tp.spare_part_id, 'qty', e.target.value)}
+                          className="w-full border border-gray-300 rounded-lg px-2.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                      </div>
                       <div>
                         <label className="block text-xs text-gray-500 mb-1">Remaining Hrs</label>
                         <input type="number" min="0" value={tp.remaining_hrs}
@@ -276,47 +265,6 @@ export function ReportNew() {
                   </div>
                 )
               })
-            )}
-          </div>
-
-          {/* Spare Parts Used */}
-          <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
-            <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Spare Parts Used</h3>
-            <div className="space-y-2">
-              <select value={spareId} onChange={e => setSpareId(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <option value="">Select spare part...</option>
-                {spareParts.map(p => <option key={p.id} value={p.id}>{p.code} — {p.name}</option>)}
-              </select>
-              <div className="flex gap-2">
-                <input type="number" value={spareQty} onChange={e => setSpareQty(e.target.value)} min="1" placeholder="Qty"
-                  className="w-24 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                <button type="button" onClick={addSpare} disabled={!spareId}
-                  className="flex-1 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-40">
-                  + Add
-                </button>
-              </div>
-            </div>
-            {selectedSpares.length > 0 && (
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="text-left text-xs text-gray-500 border-b border-gray-100">
-                    <th className="pb-2">Spare Part</th><th className="pb-2 text-right">Qty</th><th className="pb-2"></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {selectedSpares.map(s => (
-                    <tr key={s.id} className="border-b border-gray-50">
-                      <td className="py-2 text-gray-800"><span className="font-mono text-gray-400 text-xs mr-1">{s.code}</span>{s.name}</td>
-                      <td className="py-2 text-right text-gray-600">{s.qty}</td>
-                      <td className="py-2 text-right">
-                        <button type="button" onClick={() => setSelectedSpares(prev => prev.filter(x => x.id !== s.id))}
-                          className="text-red-400 hover:text-red-600 text-xs">×</button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
             )}
           </div>
 

@@ -6,9 +6,9 @@ import { srNum } from '../../utils/reportNumber'
 import { downloadPdf } from '../../utils/downloadPdf'
 import { Layout } from '../../components/Layout'
 
-type SelectedSpare = { id: string; code: string; name: string; qty: number }
 type ReportPart = {
   spare_part_id: string
+  qty: number
   hours_run: number
   next_hours: number
   hours_per_day: number
@@ -28,7 +28,6 @@ type Report = {
   remarks: string
   serviced_by: string | null
   due_service_date: string | null
-  selected_spares: SelectedSpare[]
   service: { fab_number: string; model_number: string | null; sponsor: string | null; customer: { name: string; org: string; phone: string; gst: string } }
   filed_by: { name: string | null; phone: string } | null
 }
@@ -78,8 +77,6 @@ export function ReportView() {
   if (loading) return <Layout><p className="text-gray-400 text-sm">Loading...</p></Layout>
   if (!report) return <Layout><p className="text-red-500 text-sm">Report not found.</p></Layout>
 
-  const spares: SelectedSpare[] = report.selected_spares ?? []
-
   const reportCard = (
     <div ref={printRef} className="bg-white p-8 print:p-0 print:pb-2 space-y-6 print:space-y-4">
       <div className="border-b border-gray-100 pb-4 flex items-end justify-between">
@@ -128,6 +125,7 @@ export function ReportView() {
             <thead>
               <tr className="text-left text-xs text-gray-400 border-b border-gray-100">
                 <th className="pb-1">Part</th>
+                <th className="pb-1 text-right">Qty</th>
                 <th className="pb-1 text-right">Hours Run</th>
                 <th className="pb-1 text-right">Next Hours</th>
                 <th className="pb-1 text-right">Remaining Hrs</th>
@@ -141,32 +139,12 @@ export function ReportView() {
                   <td className="py-1.5 text-gray-800">
                     <span className="font-mono text-gray-400 text-xs mr-1">{p.spare_part.code}</span>{p.spare_part.name}
                   </td>
+                  <td className="py-1.5 text-right text-gray-600">{p.qty}</td>
                   <td className="py-1.5 text-right text-gray-600">{p.hours_run}</td>
                   <td className="py-1.5 text-right text-gray-600">{p.next_hours}</td>
                   <td className={`py-1.5 text-right font-medium ${p.remaining_hours <= 0 ? 'text-red-600' : 'text-gray-900'}`}>{p.remaining_hours}</td>
                   <td className="py-1.5 text-right text-gray-600">{p.maintenance_days}</td>
                   <td className="py-1.5 text-right text-gray-600">{toDisplayDate(p.due_date)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {spares.length > 0 && (
-        <div>
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Spare Parts Used</p>
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-xs text-gray-400 border-b border-gray-100">
-                <th className="pb-1">Spare Part</th><th className="pb-1 text-right">Qty</th>
-              </tr>
-            </thead>
-            <tbody>
-              {spares.map(s => (
-                <tr key={s.id} className="border-b border-gray-50">
-                  <td className="py-1.5 text-gray-800"><span className="font-mono text-gray-400 text-xs mr-1">{s.code}</span>{s.name}</td>
-                  <td className="py-1.5 text-right text-gray-600">{s.qty}</td>
                 </tr>
               ))}
             </tbody>
