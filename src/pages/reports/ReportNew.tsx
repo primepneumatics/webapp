@@ -26,6 +26,9 @@ export function ReportNew() {
   const [spareQty, setSpareQty] = useState('1')
 
   const [parts, setParts] = useState<Record<PartType, PartState> | null>(null)
+  const [remainingHrs, setRemainingHrs] = useState<Record<PartType, string>>(() =>
+    Object.fromEntries(PART_TYPES.map(({ key }) => [key, '0'])) as Record<PartType, string>
+  )
 
   const [reportDate, setReportDate] = useState(today())
   const [totalRunHours, setTotalRunHours] = useState('')
@@ -44,14 +47,23 @@ export function ReportNew() {
     supabase.from('service_machine_parts').select('*').eq('service_id', serviceId).then(({ data }) => {
       if (data) {
         const map = {} as Record<PartType, PartState>
-        for (const p of data) map[p.part_type as PartType] = { hours_run: p.hours_run, next_hours: p.next_hours, hours_per_day: p.hours_per_day }
+        const remaining = {} as Record<PartType, string>
+        for (const p of data) {
+          map[p.part_type as PartType] = { hours_run: p.hours_run, next_hours: p.next_hours, hours_per_day: p.hours_per_day }
+          remaining[p.part_type as PartType] = String(Math.max(0, p.next_hours - p.hours_run))
+        }
         setParts(map)
+        setRemainingHrs(prev => ({ ...prev, ...remaining }))
       }
     })
   }, [serviceId])
 
   function setPart(type: PartType, field: keyof PartState, value: number) {
     setParts(prev => prev ? { ...prev, [type]: { ...prev[type], [field]: value } } : prev)
+  }
+
+  function setPartRemaining(type: PartType, value: string) {
+    setRemainingHrs(prev => ({ ...prev, [type]: value }))
   }
 
   function setPartMaintenanceDays(type: PartType, value: string) {
@@ -79,9 +91,12 @@ export function ReportNew() {
 
     const { data: { user } } = await supabase.auth.getUser()
 
+    const hoursRun = parseFloat(totalRunHours) || 0
+
     let earliestDue: Date | null = null
     const snapshotRows = PART_TYPES.map(({ key }) => {
-      const p = parts[key]
+      const remaining = Math.max(0, parseFloat(remainingHrs[key]) || 0)
+      const p: PartState = { hours_run: hoursRun, next_hours: hoursRun + remaining, hours_per_day: parts[key].hours_per_day }
       const offDays = Math.max(0, parseInt(maintenanceDays[key]) || 0)
       const { remainingHours, days } = calcRemaining(p)
       const dueDate = addDaysToDate(new Date(reportDate), Math.max(0, days) + offDays)
@@ -128,14 +143,17 @@ export function ReportNew() {
     }
 
     await supabase.from('service_machine_parts').upsert(
-      PART_TYPES.map(({ key }) => ({
-        service_id: serviceId,
-        part_type: key,
-        hours_run: parts[key].hours_run,
-        next_hours: parts[key].next_hours,
-        hours_per_day: parts[key].hours_per_day,
-        updated_at: new Date().toISOString(),
-      })),
+      PART_TYPES.map(({ key }) => {
+        const remaining = Math.max(0, parseFloat(remainingHrs[key]) || 0)
+        return {
+          service_id: serviceId,
+          part_type: key,
+          hours_run: hoursRun,
+          next_hours: hoursRun + remaining,
+          hours_per_day: parts[key].hours_per_day,
+          updated_at: new Date().toISOString(),
+        }
+      }),
       { onConflict: 'service_id,part_type' }
     )
 
@@ -178,29 +196,25 @@ export function ReportNew() {
           <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-5">
             <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Spare Item Hours</h3>
             {PART_TYPES.map(({ key, label }) => {
-              const p = parts[key]
-              const { remainingHours, days } = calcRemaining(p)
+              const hoursRunPreview = parseFloat(totalRunHours) || 0
+              const remainingPreview = Math.max(0, parseFloat(remainingHrs[key]) || 0)
+              const effective: PartState = { hours_run: hoursRunPreview, next_hours: hoursRunPreview + remainingPreview, hours_per_day: parts[key].hours_per_day }
+              const { remainingHours, days } = calcRemaining(effective)
               const overdue = remainingHours <= 0
               const offDays = Math.max(0, parseInt(maintenanceDays[key]) || 0)
               return (
                 <div key={key} className="border-t border-gray-100 pt-4 first:border-t-0 first:pt-0">
                   <p className="text-sm font-medium text-gray-800 mb-2">{label}</p>
-                  <div className="grid grid-cols-3 gap-2 mb-2">
+                  <div className="grid grid-cols-2 gap-2 mb-2">
                     <div>
-                      <label className="block text-xs text-gray-500 mb-1">Hours Run</label>
-                      <input type="number" min="0" value={p.hours_run}
-                        onChange={e => setPart(key, 'hours_run', parseFloat(e.target.value) || 0)}
-                        className="w-full border border-gray-300 rounded-lg px-2.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                    </div>
-                    <div>
-                      <label className="block text-xs text-gray-500 mb-1">Next Hours</label>
-                      <input type="number" min="0" value={p.next_hours}
-                        onChange={e => setPart(key, 'next_hours', parseFloat(e.target.value) || 0)}
+                      <label className="block text-xs text-gray-500 mb-1">Remaining Hrs</label>
+                      <input type="number" min="0" value={remainingHrs[key]}
+                        onChange={e => setPartRemaining(key, e.target.value)}
                         className="w-full border border-gray-300 rounded-lg px-2.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                     </div>
                     <div>
                       <label className="block text-xs text-gray-500 mb-1">Hrs/Day</label>
-                      <select value={p.hours_per_day}
+                      <select value={parts[key].hours_per_day}
                         onChange={e => setPart(key, 'hours_per_day', parseInt(e.target.value) as 12 | 24)}
                         className="w-full border border-gray-300 rounded-lg px-2.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                         <option value={12}>12h</option>
