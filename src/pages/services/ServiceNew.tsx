@@ -2,7 +2,10 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { Layout } from '../../components/Layout'
+import { SuggestInput } from '../../components/SuggestInput'
 import { alphanumericOnly } from '../../utils/validate'
+
+type ExistingMachine = { id: string; fab_number: string; model_number: string | null; sponsor: string | null }
 
 export function ServiceNew() {
   const { id: customerId } = useParams<{ id: string }>()
@@ -11,6 +14,7 @@ export function ServiceNew() {
   const [error, setError] = useState('')
   const [fabError, setFabError] = useState('')
   const [customerName, setCustomerName] = useState('')
+  const [existingMachines, setExistingMachines] = useState<ExistingMachine[]>([])
 
   const [form, setForm] = useState({ fab_number: '', model_number: '', sponsor: '' })
 
@@ -18,11 +22,31 @@ export function ServiceNew() {
     supabase.from('customers').select('name').eq('id', customerId).single().then(({ data }) => {
       if (data) setCustomerName(data.name)
     })
+    supabase.from('services').select('id, fab_number, model_number, sponsor').eq('customer_id', customerId).then(({ data }) => {
+      if (data) setExistingMachines(data)
+    })
   }, [customerId])
+
+  const matchedMachine = form.model_number
+    ? existingMachines.find(m => m.model_number === form.model_number) ?? null
+    : null
+
+  function handleModelNumberChange(rawValue: string) {
+    const value = alphanumericOnly(rawValue)
+    const match = existingMachines.find(m => m.model_number === value)
+    if (match) {
+      setForm({ model_number: value, fab_number: match.fab_number, sponsor: match.sponsor ?? '' })
+      setFabError('')
+    } else {
+      setForm(f => ({ ...f, model_number: value }))
+    }
+  }
 
   async function checkFab() {
     if (!form.fab_number) return
-    const { data } = await supabase.from('services').select('id').eq('fab_number', form.fab_number).maybeSingle()
+    let query = supabase.from('services').select('id').eq('fab_number', form.fab_number)
+    if (matchedMachine) query = query.neq('id', matchedMachine.id)
+    const { data } = await query.maybeSingle()
     setFabError(data ? 'A machine with this FAB Number already exists.' : '')
   }
 
@@ -39,6 +63,26 @@ export function ServiceNew() {
     if (fabError || !form.fab_number.trim()) return
     setError('')
     setSaving(true)
+
+    if (matchedMachine) {
+      const { error: updateError } = await supabase
+        .from('services')
+        .update({
+          fab_number: form.fab_number.trim(),
+          sponsor: form.sponsor.trim() || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', matchedMachine.id)
+
+      if (updateError) {
+        setError(updateError.code === '23505' ? 'A machine with this FAB Number already exists.' : 'Failed to save. Please try again.')
+        setSaving(false)
+        return
+      }
+
+      navigate(`/services/${matchedMachine.id}`)
+      return
+    }
 
     const { data: service, error: svcError } = await supabase
       .from('services')
@@ -74,7 +118,19 @@ export function ServiceNew() {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
             <Field label="FAB Number *" value={form.fab_number} onChange={setAlphanumeric('fab_number')} onBlur={checkFab} required error={fabError} placeholder="e.g. FAB2K91A" />
-            <Field label="Model Number" value={form.model_number} onChange={setAlphanumeric('model_number')} placeholder="e.g. GA30VSD" />
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Model Number</label>
+              <SuggestInput
+                value={form.model_number}
+                onChange={handleModelNumberChange}
+                suggestions={existingMachines.map(m => m.model_number).filter((v): v is string => !!v)}
+                placeholder="e.g. GA30VSD"
+              />
+              {matchedMachine && (
+                <p className="text-xs text-blue-600 mt-1">Existing machine found for this customer — FAB Number and Sponsor filled in from it.</p>
+              )}
+            </div>
 
             <Field label="Sponsor" value={form.sponsor} onChange={set('sponsor')} placeholder="Dealer / referrer name" />
           </div>
@@ -83,7 +139,7 @@ export function ServiceNew() {
 
           <button type="submit" disabled={saving}
             className="w-full bg-blue-600 text-white rounded-lg py-2.5 text-sm font-medium hover:bg-blue-700 disabled:opacity-50 transition-colors">
-            {saving ? 'Saving...' : 'Save Machine'}
+            {saving ? 'Saving...' : matchedMachine ? 'Use Existing Machine' : 'Save Machine'}
           </button>
         </form>
       </div>
