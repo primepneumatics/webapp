@@ -29,6 +29,7 @@ export function ReportNew() {
 
   const [reportDate, setReportDate] = useState(today())
   const [totalRunHours, setTotalRunHours] = useState('')
+  const [maintenanceDays, setMaintenanceDays] = useState('0')
   const [remarks, setRemarks] = useState('')
   const [servicedBy, setServicedBy] = useState('')
 
@@ -72,11 +73,13 @@ export function ReportNew() {
 
     const { data: { user } } = await supabase.auth.getUser()
 
+    const offDays = Math.max(0, parseInt(maintenanceDays) || 0)
+
     let earliestDue: Date | null = null
     const snapshotRows = PART_TYPES.map(({ key }) => {
       const p = parts[key]
       const { remainingHours, days } = calcRemaining(p)
-      const dueDate = addDaysToDate(new Date(reportDate), Math.max(0, days))
+      const dueDate = addDaysToDate(new Date(reportDate), Math.max(0, days) + offDays)
       if (!earliestDue || dueDate < earliestDue) earliestDue = dueDate
       return {
         part_type: key,
@@ -94,6 +97,7 @@ export function ReportNew() {
         service_id: serviceId,
         report_date: reportDate,
         total_run_hours: parseFloat(totalRunHours) || 0,
+        maintenance_days: offDays,
         remarks,
         serviced_by: servicedBy.trim() || null,
         selected_spares: selectedSpares,
@@ -163,6 +167,12 @@ export function ReportNew() {
               <input type="number" min="0" value={totalRunHours} onChange={e => setTotalRunHours(e.target.value)} required
                 className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Maintenance Days</label>
+              <input type="number" min="0" value={maintenanceDays} onChange={e => setMaintenanceDays(e.target.value)}
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              <p className="text-xs text-gray-400 mt-1">Planned off days the machine won't run (e.g. plant shutdown). Added on top of every part's calculated due date.</p>
+            </div>
           </div>
 
           {/* Spare items block */}
@@ -201,7 +211,7 @@ export function ReportNew() {
                   <p className={`text-xs ${overdue ? 'text-red-600 font-medium' : 'text-blue-600'}`}>
                     {overdue
                       ? `Overdue by ${Math.abs(remainingHours)} hrs`
-                      : `${remainingHours} hrs remaining · ~${Math.ceil(days)} days · due ${toDisplayDate(toISODate(addDaysToDate(new Date(reportDate), days)))}`}
+                      : `${remainingHours} hrs remaining · ~${Math.ceil(days)} days · due ${toDisplayDate(toISODate(addDaysToDate(new Date(reportDate), days + (Math.max(0, parseInt(maintenanceDays) || 0)))))}`}
                   </p>
                 </div>
               )

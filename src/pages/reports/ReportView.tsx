@@ -17,6 +17,7 @@ type Report = {
   filed_by_id: string | null
   report_date: string
   total_run_hours: number
+  maintenance_days: number
   remarks: string
   serviced_by: string | null
   due_service_date: string | null
@@ -109,6 +110,10 @@ export function ReportView() {
           <InfoRowPair
             a={{ label: 'Due Service Date', value: report.due_service_date ? toDisplayDate(report.due_service_date) : '' }}
             b={{ label: 'Service By', value: report.serviced_by ?? '' }}
+          />
+          <InfoRowPair
+            a={{ label: 'Maintenance Days', value: `${report.maintenance_days} days` }}
+            b={{ label: '', value: '' }}
           />
         </tbody>
       </table>
@@ -242,9 +247,13 @@ function InfoRowPair({ a, b }: { a: { label: string; value: string }; b: { label
       <td className="align-top pr-4 pb-3 w-1/2">
         <InfoRow label={a.label} value={a.value} />
       </td>
-      <td className="align-top pb-3 w-1/2">
-        <InfoRow label={b.label} value={b.value} />
-      </td>
+      {!b.label && !b.value ? (
+        <td className="align-top pb-3 w-1/2" />
+      ) : (
+        <td className="align-top pb-3 w-1/2">
+          <InfoRow label={b.label} value={b.value} />
+        </td>
+      )}
     </tr>
   )
 }
