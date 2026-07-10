@@ -84,20 +84,34 @@ export function ReportView() {
         )}
       </div>
 
-      <div className="grid grid-cols-2 gap-4 text-sm">
-        <InfoRow label="Customer" value={report.service.customer.name} />
-        <InfoRow label="Company Name" value={report.service.customer.org} />
-        <InfoRow label="Customer Number" value={report.service.customer.phone} />
-        <InfoRow label="GST" value={report.service.customer.gst} />
-        <InfoRow label="FAB Number" value={report.service.fab_number} />
-        <InfoRow label="Model Number" value={report.service.model_number ?? ''} />
-        <InfoRow label="Report Date" value={toDisplayDate(report.report_date)} />
-        <InfoRow label="Report No." value={report.report_number ? srNum(report.report_number) : '—'} />
-        <InfoRow label="Total Machine Run" value={`${report.total_run_hours} hrs`} />
-        <InfoRow label="Sponsor" value={report.service.sponsor ?? ''} />
-        <InfoRow label="Due Service Date" value={report.due_service_date ? toDisplayDate(report.due_service_date) : ''} />
-        <InfoRow label="Service By" value={report.serviced_by ?? ''} />
-      </div>
+      <table className="w-full text-sm" style={{ borderCollapse: 'collapse' }}>
+        <tbody>
+          <InfoRowPair
+            a={{ label: 'Customer', value: report.service.customer.name }}
+            b={{ label: 'Company Name', value: report.service.customer.org }}
+          />
+          <InfoRowPair
+            a={{ label: 'Customer Number', value: report.service.customer.phone }}
+            b={{ label: 'GST', value: report.service.customer.gst }}
+          />
+          <InfoRowPair
+            a={{ label: 'FAB Number', value: report.service.fab_number }}
+            b={{ label: 'Model Number', value: report.service.model_number ?? '' }}
+          />
+          <InfoRowPair
+            a={{ label: 'Report Date', value: toDisplayDate(report.report_date) }}
+            b={{ label: 'Report No.', value: report.report_number ? srNum(report.report_number) : '—' }}
+          />
+          <InfoRowPair
+            a={{ label: 'Total Machine Run', value: `${report.total_run_hours} hrs` }}
+            b={{ label: 'Sponsor', value: report.service.sponsor ?? '' }}
+          />
+          <InfoRowPair
+            a={{ label: 'Due Service Date', value: report.due_service_date ? toDisplayDate(report.due_service_date) : '' }}
+            b={{ label: 'Service By', value: report.serviced_by ?? '' }}
+          />
+        </tbody>
+      </table>
 
       {parts.length > 0 && (
         <div>
@@ -219,5 +233,18 @@ function InfoRow({ label, value }: { label: string; value: string }) {
       <p className="text-xs text-gray-500">{label}</p>
       <p className="text-sm font-medium text-gray-900">{value || '—'}</p>
     </div>
+  )
+}
+
+function InfoRowPair({ a, b }: { a: { label: string; value: string }; b: { label: string; value: string } }) {
+  return (
+    <tr>
+      <td className="align-top pr-4 pb-3 w-1/2">
+        <InfoRow label={a.label} value={a.value} />
+      </td>
+      <td className="align-top pb-3 w-1/2">
+        <InfoRow label={b.label} value={b.value} />
+      </td>
+    </tr>
   )
 }

@@ -17,6 +17,9 @@
     "react-router-dom": "^7.18.0",
     "react-to-print": "^3.3.0"
   },
+  "overrides": {
+    "html2canvas": "npm:html2canvas-pro@^2.2.3"
+  },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@tailwindcss/vite": "^4.3.1",
