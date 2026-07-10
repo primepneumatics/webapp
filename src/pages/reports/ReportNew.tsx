@@ -11,7 +11,7 @@ import { alphanumericOnly } from '../../utils/validate'
 type SparePart = { id: string; code: string; name: string }
 type ServiceInfo = { id: string; fab_number: string; model_number: string | null; customer_id: string }
 type ExistingMachine = { id: string; fab_number: string; model_number: string | null; sponsor: string | null }
-type TrackedPart = { spare_part_id: string; code: string; name: string; qty: string; hours_per_day: 12 | 24; remaining_hrs: string; maintenance_days: string }
+type TrackedPart = { spare_part_id: string; code: string; name: string; qty: string; hours_per_day: string; remaining_hrs: string; maintenance_days: string }
 
 export function ReportNew() {
   const { id: routeServiceId, customerId: routeCustomerId } = useParams<{ id?: string; customerId?: string }>()
@@ -87,7 +87,7 @@ export function ReportNew() {
   function addTrackedPart() {
     const part = spareParts.find(p => p.id === trackPartId)
     if (!part || trackedParts.some(tp => tp.spare_part_id === part.id)) return
-    setTrackedParts(prev => [...prev, { spare_part_id: part.id, code: part.code, name: part.name, qty: '1', hours_per_day: 24, remaining_hrs: '0', maintenance_days: '0' }])
+    setTrackedParts(prev => [...prev, { spare_part_id: part.id, code: part.code, name: part.name, qty: '1', hours_per_day: '24', remaining_hrs: '0', maintenance_days: '0' }])
     setTrackPartId('')
   }
 
@@ -95,7 +95,7 @@ export function ReportNew() {
     setTrackedParts(prev => prev.filter(tp => tp.spare_part_id !== spare_part_id))
   }
 
-  function updateTrackedPart(spare_part_id: string, field: 'qty' | 'hours_per_day' | 'remaining_hrs' | 'maintenance_days', value: string | number) {
+  function updateTrackedPart(spare_part_id: string, field: 'qty' | 'hours_per_day' | 'remaining_hrs' | 'maintenance_days', value: string) {
     setTrackedParts(prev => prev.map(tp => tp.spare_part_id === spare_part_id ? { ...tp, [field]: value } : tp))
   }
 
@@ -167,7 +167,8 @@ export function ReportNew() {
     let earliestDue: Date | null = null
     const snapshotRows = trackedParts.map(tp => {
       const remaining = Math.max(0, parseFloat(tp.remaining_hrs) || 0)
-      const p: PartState = { hours_run: hoursRun, next_hours: hoursRun + remaining, hours_per_day: tp.hours_per_day }
+      const hoursPerDay = Math.max(1, parseInt(tp.hours_per_day) || 24)
+      const p: PartState = { hours_run: hoursRun, next_hours: hoursRun + remaining, hours_per_day: hoursPerDay }
       const offDays = Math.max(0, parseInt(tp.maintenance_days) || 0)
       const { remainingHours, days } = calcRemaining(p)
       const dueDate = addDaysToDate(new Date(reportDate), Math.max(0, days) + offDays)
@@ -222,7 +223,7 @@ export function ReportNew() {
             spare_part_id: tp.spare_part_id,
             hours_run: hoursRun,
             next_hours: hoursRun + remaining,
-            hours_per_day: tp.hours_per_day,
+            hours_per_day: Math.max(1, parseInt(tp.hours_per_day) || 24),
             updated_at: new Date().toISOString(),
           }
         }),
@@ -328,7 +329,7 @@ export function ReportNew() {
               trackedParts.map(tp => {
                 const hoursRunPreview = parseFloat(totalRunHours) || 0
                 const remainingPreview = Math.max(0, parseFloat(tp.remaining_hrs) || 0)
-                const effective: PartState = { hours_run: hoursRunPreview, next_hours: hoursRunPreview + remainingPreview, hours_per_day: tp.hours_per_day }
+                const effective: PartState = { hours_run: hoursRunPreview, next_hours: hoursRunPreview + remainingPreview, hours_per_day: Math.max(1, parseInt(tp.hours_per_day) || 24) }
                 const { remainingHours, days } = calcRemaining(effective)
                 const overdue = remainingHours <= 0
                 const offDays = Math.max(0, parseInt(tp.maintenance_days) || 0)
@@ -356,12 +357,9 @@ export function ReportNew() {
                       </div>
                       <div>
                         <label className="block text-xs text-gray-500 mb-1">Hrs/Day</label>
-                        <select value={tp.hours_per_day}
-                          onChange={e => updateTrackedPart(tp.spare_part_id, 'hours_per_day', parseInt(e.target.value) as 12 | 24)}
-                          className="w-full border border-gray-300 rounded-lg px-2.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                          <option value={12}>12h</option>
-                          <option value={24}>24h</option>
-                        </select>
+                        <input type="number" min="1" value={tp.hours_per_day}
+                          onChange={e => updateTrackedPart(tp.spare_part_id, 'hours_per_day', e.target.value)}
+                          className="w-full border border-gray-300 rounded-lg px-2.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                       </div>
                     </div>
                     <div className="mb-2">
