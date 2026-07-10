@@ -29,7 +29,9 @@ export function ReportNew() {
 
   const [reportDate, setReportDate] = useState(today())
   const [totalRunHours, setTotalRunHours] = useState('')
-  const [maintenanceDays, setMaintenanceDays] = useState('0')
+  const [maintenanceDays, setMaintenanceDays] = useState<Record<PartType, string>>(() =>
+    Object.fromEntries(PART_TYPES.map(({ key }) => [key, '0'])) as Record<PartType, string>
+  )
   const [remarks, setRemarks] = useState('')
   const [servicedBy, setServicedBy] = useState('')
 
@@ -50,6 +52,10 @@ export function ReportNew() {
 
   function setPart(type: PartType, field: keyof PartState, value: number) {
     setParts(prev => prev ? { ...prev, [type]: { ...prev[type], [field]: value } } : prev)
+  }
+
+  function setPartMaintenanceDays(type: PartType, value: string) {
+    setMaintenanceDays(prev => ({ ...prev, [type]: value }))
   }
 
   function addSpare() {
@@ -73,11 +79,10 @@ export function ReportNew() {
 
     const { data: { user } } = await supabase.auth.getUser()
 
-    const offDays = Math.max(0, parseInt(maintenanceDays) || 0)
-
     let earliestDue: Date | null = null
     const snapshotRows = PART_TYPES.map(({ key }) => {
       const p = parts[key]
+      const offDays = Math.max(0, parseInt(maintenanceDays[key]) || 0)
       const { remainingHours, days } = calcRemaining(p)
       const dueDate = addDaysToDate(new Date(reportDate), Math.max(0, days) + offDays)
       if (!earliestDue || dueDate < earliestDue) earliestDue = dueDate
@@ -88,6 +93,7 @@ export function ReportNew() {
         hours_per_day: p.hours_per_day,
         remaining_hours: remainingHours,
         due_date: toISODate(dueDate),
+        maintenance_days: offDays,
       }
     })
 
@@ -97,7 +103,6 @@ export function ReportNew() {
         service_id: serviceId,
         report_date: reportDate,
         total_run_hours: parseFloat(totalRunHours) || 0,
-        maintenance_days: offDays,
         remarks,
         serviced_by: servicedBy.trim() || null,
         selected_spares: selectedSpares,
@@ -167,12 +172,6 @@ export function ReportNew() {
               <input type="number" min="0" value={totalRunHours} onChange={e => setTotalRunHours(e.target.value)} required
                 className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Maintenance Days</label>
-              <input type="number" min="0" value={maintenanceDays} onChange={e => setMaintenanceDays(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-              <p className="text-xs text-gray-400 mt-1">Planned off days the machine won't run (e.g. plant shutdown). Added on top of every part's calculated due date.</p>
-            </div>
           </div>
 
           {/* Spare items block */}
@@ -182,6 +181,7 @@ export function ReportNew() {
               const p = parts[key]
               const { remainingHours, days } = calcRemaining(p)
               const overdue = remainingHours <= 0
+              const offDays = Math.max(0, parseInt(maintenanceDays[key]) || 0)
               return (
                 <div key={key} className="border-t border-gray-100 pt-4 first:border-t-0 first:pt-0">
                   <p className="text-sm font-medium text-gray-800 mb-2">{label}</p>
@@ -208,10 +208,17 @@ export function ReportNew() {
                       </select>
                     </div>
                   </div>
+                  <div className="mb-2">
+                    <label className="block text-xs text-gray-500 mb-1">Maintenance Days</label>
+                    <input type="number" min="0" value={maintenanceDays[key]}
+                      onChange={e => setPartMaintenanceDays(key, e.target.value)}
+                      className="w-full border border-gray-300 rounded-lg px-2.5 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    <p className="text-xs text-gray-400 mt-1">Planned off days for this part (e.g. plant shutdown), added on top of its calculated due date.</p>
+                  </div>
                   <p className={`text-xs ${overdue ? 'text-red-600 font-medium' : 'text-blue-600'}`}>
                     {overdue
                       ? `Overdue by ${Math.abs(remainingHours)} hrs`
-                      : `${remainingHours} hrs remaining · ~${Math.ceil(days)} days · due ${toDisplayDate(toISODate(addDaysToDate(new Date(reportDate), days + (Math.max(0, parseInt(maintenanceDays) || 0)))))}`}
+                      : `${remainingHours} hrs remaining · ~${Math.ceil(days)} days · due ${toDisplayDate(toISODate(addDaysToDate(new Date(reportDate), days + offDays)))}`}
                   </p>
                 </div>
               )

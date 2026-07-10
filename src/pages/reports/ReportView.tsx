@@ -8,7 +8,7 @@ import { PART_TYPES } from '../../utils/machineParts'
 import { Layout } from '../../components/Layout'
 
 type SelectedSpare = { id: string; code: string; name: string; qty: number }
-type ReportPart = { part_type: string; hours_run: number; next_hours: number; hours_per_day: number; remaining_hours: number; due_date: string }
+type ReportPart = { part_type: string; hours_run: number; next_hours: number; hours_per_day: number; remaining_hours: number; due_date: string; maintenance_days: number }
 
 type Report = {
   id: string
@@ -17,7 +17,6 @@ type Report = {
   filed_by_id: string | null
   report_date: string
   total_run_hours: number
-  maintenance_days: number
   remarks: string
   serviced_by: string | null
   due_service_date: string | null
@@ -111,10 +110,6 @@ export function ReportView() {
             a={{ label: 'Due Service Date', value: report.due_service_date ? toDisplayDate(report.due_service_date) : '' }}
             b={{ label: 'Service By', value: report.serviced_by ?? '' }}
           />
-          <InfoRowPair
-            a={{ label: 'Maintenance Days', value: `${report.maintenance_days} days` }}
-            b={{ label: '', value: '' }}
-          />
         </tbody>
       </table>
 
@@ -128,6 +123,7 @@ export function ReportView() {
                 <th className="pb-1 text-right">Hours Run</th>
                 <th className="pb-1 text-right">Next Hours</th>
                 <th className="pb-1 text-right">Remaining Hrs</th>
+                <th className="pb-1 text-right">Maint. Days</th>
                 <th className="pb-1 text-right">Due Date</th>
               </tr>
             </thead>
@@ -141,6 +137,7 @@ export function ReportView() {
                     <td className="py-1.5 text-right text-gray-600">{p.hours_run}</td>
                     <td className="py-1.5 text-right text-gray-600">{p.next_hours}</td>
                     <td className={`py-1.5 text-right font-medium ${p.remaining_hours <= 0 ? 'text-red-600' : 'text-gray-900'}`}>{p.remaining_hours}</td>
+                    <td className="py-1.5 text-right text-gray-600">{p.maintenance_days}</td>
                     <td className="py-1.5 text-right text-gray-600">{toDisplayDate(p.due_date)}</td>
                   </tr>
                 )
