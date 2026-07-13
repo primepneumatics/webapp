@@ -78,116 +78,115 @@ export function ReportView() {
   if (!report) return <Layout><p className="text-red-500 text-sm">Report not found.</p></Layout>
 
   const reportCard = (
-    <div ref={printRef} className="bg-white p-8 print:p-0 print:pb-2">
-      {/* Header */}
-      <div className="flex items-end justify-between pb-4 mb-4 border-b-2 border-gray-900">
-        <div>
-          <img src="/logo.png" alt="Prime Pneumatics & Consultants" width={172} height={40} className="h-10 w-auto mb-1" />
-          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Service Report</p>
-        </div>
-        {report.report_number && (
-          <p className="inline-block px-2.5 py-1 border border-gray-300 rounded-md font-mono text-sm font-semibold text-gray-800">
-            {srNum(report.report_number)}
-          </p>
-        )}
-      </div>
+    <div ref={printRef} className="bg-white p-6 print:p-0 print:pb-2 text-gray-900">
+      <table className="w-full border-collapse border-2 border-gray-900 text-sm table-fixed">
+        <colgroup>
+          <col className="w-[15%]" />
+          <col className="w-[35%]" />
+          <col className="w-[15%]" />
+          <col className="w-[35%]" />
+        </colgroup>
+        <tbody>
+          {/* Header: title box + logo/address */}
+          <tr>
+            <td colSpan={2} className="border border-gray-900 p-3 align-top">
+              <p className="text-xl font-bold tracking-wide">SERVICE REPORT</p>
+            </td>
+            <td colSpan={2} rowSpan={3} className="border border-gray-900 p-3 align-top">
+              <img src="/logo.png" alt="Prime Pneumatics & Consultants" width={172} height={40} className="h-9 w-auto mb-2" />
+              <p className="text-xs text-gray-700 leading-snug">
+                F125,126 - Ekta Arcade, Nr.Horizon Hotel<br />
+                Kadodara, Surat Bardoli Road, Surat - 394 327<br />
+                Mob - +91 97128 96739, 85898 28306
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td className="border border-gray-900 p-2 text-xs text-gray-500">Report No :</td>
+            <td className="border border-gray-900 p-2 font-mono font-semibold">{report.report_number ? srNum(report.report_number) : '—'}</td>
+          </tr>
+          <tr>
+            <td className="border border-gray-900 p-2 text-xs text-gray-500">Date :</td>
+            <td className="border border-gray-900 p-2 font-medium">{toDisplayDate(report.report_date)}</td>
+          </tr>
 
-      {/* Customer */}
-      <SectionCard title="Customer">
-        <table className="w-full text-sm" style={{ borderCollapse: 'collapse' }}>
-          <tbody>
-            <InfoRowPair
-              a={{ label: 'Customer', value: report.service.customer.name }}
-              b={{ label: 'Company Name', value: report.service.customer.org }}
-            />
-            <InfoRowPair
-              a={{ label: 'Customer Number', value: report.service.customer.phone }}
-              b={{ label: 'GST', value: report.service.customer.gst }}
-            />
-          </tbody>
-        </table>
-      </SectionCard>
+          {/* Customer */}
+          <tr>
+            <td colSpan={4} className="border border-gray-900 p-2 align-top">
+              <p className="text-xs text-gray-500 mb-1">Customer Name &amp; Address :</p>
+              <p className="font-medium">
+                {report.service.customer.name}
+                {report.service.customer.org ? ` — ${report.service.customer.org}` : ''}
+              </p>
+            </td>
+          </tr>
+          <FieldRow label="Contact No" value={report.service.customer.phone} label2="GST" value2={report.service.customer.gst} />
 
-      {/* Machine */}
-      <SectionCard title="Machine">
-        <table className="w-full text-sm" style={{ borderCollapse: 'collapse' }}>
-          <tbody>
-            <InfoRowPair
-              a={{ label: 'FAB Number', value: report.service.fab_number }}
-              b={{ label: 'Model Number', value: report.service.model_number ?? '' }}
-            />
-            <InfoRowPair
-              a={{ label: 'Sponsor', value: report.service.sponsor ?? '' }}
-              b={{ label: '', value: '' }}
-            />
-          </tbody>
-        </table>
-      </SectionCard>
+          {/* Machine */}
+          <FieldRow label="FAB Number" value={report.service.fab_number} label2="Model Number" value2={report.service.model_number ?? ''} />
+          <FieldRow label="Sponsor" value={report.service.sponsor ?? ''} label2="Service By" value2={report.serviced_by ?? ''} />
+          <FieldRow label="Total Machine Run" value={`${report.total_run_hours} hrs`} label2="Due Service Date" value2={report.due_service_date ? toDisplayDate(report.due_service_date) : ''} />
 
-      {/* Service Summary */}
-      <SectionCard title="Service Summary">
-        <table className="w-full text-sm" style={{ borderCollapse: 'collapse' }}>
-          <tbody>
-            <InfoRowPair
-              a={{ label: 'Report Date', value: toDisplayDate(report.report_date) }}
-              b={{ label: 'Report No.', value: report.report_number ? srNum(report.report_number) : '—' }}
-            />
-            <InfoRowPair
-              a={{ label: 'Total Machine Run', value: `${report.total_run_hours} hrs` }}
-              b={{ label: 'Due Service Date', value: report.due_service_date ? toDisplayDate(report.due_service_date) : '' }}
-            />
-            <InfoRowPair
-              a={{ label: 'Service By', value: report.serviced_by ?? '' }}
-              b={{ label: '', value: '' }}
-            />
-          </tbody>
-        </table>
-      </SectionCard>
+          {/* Spare Part Status */}
+          {parts.length > 0 && (
+            <tr>
+              <td colSpan={4} className="border border-gray-900 p-0 align-top break-inside-avoid">
+                <p className="text-xs text-gray-500 px-2 pt-2">Spare Part Status</p>
+                <table className="w-full text-sm mt-1" style={{ borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr className="text-left text-xs text-gray-500 bg-gray-50">
+                      <th className="py-2 px-2 border-t border-gray-200">Part</th>
+                      <th className="py-2 px-2 border-t border-gray-200 text-right">Qty</th>
+                      <th className="py-2 px-2 border-t border-gray-200 text-right">Hours Run</th>
+                      <th className="py-2 px-2 border-t border-gray-200 text-right">Next Hours</th>
+                      <th className="py-2 px-2 border-t border-gray-200 text-right">Remaining Hrs</th>
+                      <th className="py-2 px-2 border-t border-gray-200 text-right">Maint. Days</th>
+                      <th className="py-2 px-2 border-t border-gray-200 text-right">Due Date</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {parts.map(p => (
+                      <tr key={p.spare_part_id} className="border-t border-gray-100 break-inside-avoid">
+                        <td className="py-2 px-2 text-gray-800">
+                          <span className="font-mono text-gray-400 text-xs mr-1">{p.spare_part.code}</span>{p.spare_part.name}
+                        </td>
+                        <td className="py-2 px-2 text-right text-gray-600">{p.qty}</td>
+                        <td className="py-2 px-2 text-right text-gray-600">{p.hours_run}</td>
+                        <td className="py-2 px-2 text-right text-gray-600">{p.next_hours}</td>
+                        <td className={`py-2 px-2 text-right font-medium ${p.remaining_hours <= 0 ? 'text-red-600' : 'text-gray-900'}`}>{p.remaining_hours}</td>
+                        <td className="py-2 px-2 text-right text-gray-600">{p.maintenance_days}</td>
+                        <td className="py-2 px-2 text-right text-gray-600">{toDisplayDate(p.due_date)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </td>
+            </tr>
+          )}
 
-      {/* Spare Part Status */}
-      {parts.length > 0 && (
-        <SectionCard title="Spare Part Status">
-          <table className="w-full text-sm" style={{ borderCollapse: 'collapse' }}>
-            <thead>
-              <tr className="text-left text-xs text-gray-500 bg-gray-50">
-                <th className="py-2 px-2">Part</th>
-                <th className="py-2 px-2 text-right">Qty</th>
-                <th className="py-2 px-2 text-right">Hours Run</th>
-                <th className="py-2 px-2 text-right">Next Hours</th>
-                <th className="py-2 px-2 text-right">Remaining Hrs</th>
-                <th className="py-2 px-2 text-right">Maint. Days</th>
-                <th className="py-2 px-2 text-right">Due Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              {parts.map(p => (
-                <tr key={p.spare_part_id} className="border-b border-gray-100 break-inside-avoid">
-                  <td className="py-2 px-2 text-gray-800">
-                    <span className="font-mono text-gray-400 text-xs mr-1">{p.spare_part.code}</span>{p.spare_part.name}
-                  </td>
-                  <td className="py-2 px-2 text-right text-gray-600">{p.qty}</td>
-                  <td className="py-2 px-2 text-right text-gray-600">{p.hours_run}</td>
-                  <td className="py-2 px-2 text-right text-gray-600">{p.next_hours}</td>
-                  <td className={`py-2 px-2 text-right font-medium ${p.remaining_hours <= 0 ? 'text-red-600' : 'text-gray-900'}`}>{p.remaining_hours}</td>
-                  <td className="py-2 px-2 text-right text-gray-600">{p.maintenance_days}</td>
-                  <td className="py-2 px-2 text-right text-gray-600">{toDisplayDate(p.due_date)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </SectionCard>
-      )}
+          {/* Remarks */}
+          <tr>
+            <td colSpan={4} className="border border-gray-900 p-2 align-top break-inside-avoid" style={{ minHeight: '3rem' }}>
+              <p className="text-xs text-gray-500 mb-1">Remarks :</p>
+              <p className="text-sm whitespace-pre-wrap">{report.remarks || '—'}</p>
+            </td>
+          </tr>
 
-      {/* Remarks */}
-      {report.remarks && (
-        <SectionCard title="Remarks">
-          <p className="text-sm text-gray-700 whitespace-pre-wrap">{report.remarks}</p>
-        </SectionCard>
-      )}
+          {/* Signatures */}
+          <tr>
+            <td colSpan={2} className="border border-gray-900 p-3 pt-8 text-center align-bottom">
+              <p className="font-semibold">Service Engineer</p>
+              {report.filed_by?.name && <p className="text-xs font-normal text-gray-600 mt-1">{report.filed_by.name}</p>}
+            </td>
+            <td colSpan={2} className="border border-gray-900 p-3 pt-8 text-center align-bottom">
+              <p className="font-semibold">Customer Name, Sign &amp; Seal</p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
 
       {/* Footer */}
-      <div className="pt-3 border-t border-gray-100 flex items-center justify-between text-[10px] text-gray-400">
-        <span>Prime Pneumatics &amp; Consultants</span>
+      <div className="pt-2 flex items-center justify-end text-[10px] text-gray-400">
         <span>Generated {toDisplayDate(today())}</span>
       </div>
     </div>
@@ -249,37 +248,13 @@ export function ReportView() {
   )
 }
 
-function SectionCard({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="border border-gray-200 rounded-xl p-5 mb-4 break-inside-avoid">
-      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">{title}</p>
-      {children}
-    </div>
-  )
-}
-
-function InfoRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <p className="text-xs text-gray-500">{label}</p>
-      <p className="text-sm font-medium text-gray-900">{value || '—'}</p>
-    </div>
-  )
-}
-
-function InfoRowPair({ a, b }: { a: { label: string; value: string }; b: { label: string; value: string } }) {
+function FieldRow({ label, value, label2, value2 }: { label: string; value: string; label2?: string; value2?: string }) {
   return (
     <tr>
-      <td className="align-top pr-4 pb-3 w-1/2">
-        <InfoRow label={a.label} value={a.value} />
-      </td>
-      {!b.label && !b.value ? (
-        <td className="align-top pb-3 w-1/2" />
-      ) : (
-        <td className="align-top pb-3 w-1/2">
-          <InfoRow label={b.label} value={b.value} />
-        </td>
-      )}
+      <td className="border border-gray-900 p-2 text-xs text-gray-500">{label}</td>
+      <td className="border border-gray-900 p-2 font-medium">{value || '—'}</td>
+      <td className="border border-gray-900 p-2 text-xs text-gray-500">{label2 ?? ''}</td>
+      <td className="border border-gray-900 p-2 font-medium">{label2 ? (value2 || '—') : ''}</td>
     </tr>
   )
 }
