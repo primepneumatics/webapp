@@ -1,16 +1,17 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { Layout } from '../../components/Layout'
 
 export function CustomerNew() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [gstError, setGstError] = useState('')
 
   const [form, setForm] = useState({
-    gst: '', name: '', org: '', address: '', phone: '',
+    gst: '', name: '', org: searchParams.get('org') ?? '', address: '', phone: '',
   })
 
   async function checkGst() {
