@@ -89,11 +89,11 @@ export function ReportView() {
         <tbody>
           {/* Header: title box + logo/address */}
           <tr>
-            <td colSpan={2} className="border border-gray-900 p-3 align-top">
+            <td colSpan={2} className="border border-gray-900 p-3 align-middle text-center break-words">
               <p className="text-xl font-bold tracking-wide">SERVICE REPORT</p>
             </td>
-            <td colSpan={2} rowSpan={3} className="border border-gray-900 p-3 align-top">
-              <img src="/logo.png" alt="Prime Pneumatics & Consultants" width={172} height={40} className="h-9 w-auto mb-2" />
+            <td colSpan={2} rowSpan={3} className="border border-gray-900 p-3 align-middle text-center break-words">
+              <img src="/logo.png" alt="Prime Pneumatics & Consultants" width={172} height={40} className="h-9 w-auto mb-2 mx-auto" />
               <p className="text-xs text-gray-700 leading-snug">
                 F125,126 - Ekta Arcade, Nr.Horizon Hotel<br />
                 Kadodara, Surat Bardoli Road, Surat - 394 327<br />
@@ -102,17 +102,17 @@ export function ReportView() {
             </td>
           </tr>
           <tr>
-            <td className="border border-gray-900 p-2 text-xs text-gray-500">Report No :</td>
-            <td className="border border-gray-900 p-2 font-mono font-semibold">{report.report_number ? srNum(report.report_number) : '—'}</td>
+            <td className="border border-gray-900 p-2 text-xs text-gray-500 text-center align-middle break-words">Report No :</td>
+            <td className="border border-gray-900 p-2 font-mono font-semibold text-center align-middle break-words">{report.report_number ? srNum(report.report_number) : '—'}</td>
           </tr>
           <tr>
-            <td className="border border-gray-900 p-2 text-xs text-gray-500">Date :</td>
-            <td className="border border-gray-900 p-2 font-medium">{toDisplayDate(report.report_date)}</td>
+            <td className="border border-gray-900 p-2 text-xs text-gray-500 text-center align-middle break-words">Date :</td>
+            <td className="border border-gray-900 p-2 font-medium text-center align-middle break-words">{toDisplayDate(report.report_date)}</td>
           </tr>
 
           {/* Customer */}
           <tr>
-            <td colSpan={4} className="border border-gray-900 p-2 align-top">
+            <td colSpan={4} className="border border-gray-900 p-2 align-middle text-center break-words">
               <p className="text-xs text-gray-500 mb-1">Customer Name &amp; Address :</p>
               <p className="font-medium">
                 {report.service.customer.name}
@@ -132,30 +132,30 @@ export function ReportView() {
             <tr>
               <td colSpan={4} className="border border-gray-900 p-0 align-top break-inside-avoid">
                 <p className="text-xs text-gray-500 px-2 pt-2">Spare Part Status</p>
-                <table className="w-full text-sm mt-1" style={{ borderCollapse: 'collapse' }}>
+                <table className="w-full text-sm mt-1 table-fixed" style={{ borderCollapse: 'collapse' }}>
                   <thead>
-                    <tr className="text-left text-xs text-gray-500 bg-gray-50">
-                      <th className="py-2 px-2 border-t border-gray-200">Part</th>
-                      <th className="py-2 px-2 border-t border-gray-200 text-right">Qty</th>
-                      <th className="py-2 px-2 border-t border-gray-200 text-right">Hours Run</th>
-                      <th className="py-2 px-2 border-t border-gray-200 text-right">Next Hours</th>
-                      <th className="py-2 px-2 border-t border-gray-200 text-right">Remaining Hrs</th>
-                      <th className="py-2 px-2 border-t border-gray-200 text-right">Maint. Days</th>
-                      <th className="py-2 px-2 border-t border-gray-200 text-right">Due Date</th>
+                    <tr className="text-center text-xs text-gray-500 bg-gray-50">
+                      <th className="py-2 px-2 border-t border-gray-200 break-words">Part</th>
+                      <th className="py-2 px-2 border-t border-gray-200 break-words">Qty</th>
+                      <th className="py-2 px-2 border-t border-gray-200 break-words">Hours Run</th>
+                      <th className="py-2 px-2 border-t border-gray-200 break-words">Next Hours</th>
+                      <th className="py-2 px-2 border-t border-gray-200 break-words">Remaining Hrs</th>
+                      <th className="py-2 px-2 border-t border-gray-200 break-words">Maint. Days</th>
+                      <th className="py-2 px-2 border-t border-gray-200 break-words">Due Date</th>
                     </tr>
                   </thead>
                   <tbody>
                     {parts.map(p => (
-                      <tr key={p.spare_part_id} className="border-t border-gray-100 break-inside-avoid">
-                        <td className="py-2 px-2 text-gray-800">
+                      <tr key={p.spare_part_id} className="border-t border-gray-100 break-inside-avoid text-center">
+                        <td className="py-2 px-2 text-gray-800 break-words">
                           <span className="font-mono text-gray-400 text-xs mr-1">{p.spare_part.code}</span>{p.spare_part.name}
                         </td>
-                        <td className="py-2 px-2 text-right text-gray-600">{p.qty}</td>
-                        <td className="py-2 px-2 text-right text-gray-600">{p.hours_run}</td>
-                        <td className="py-2 px-2 text-right text-gray-600">{p.next_hours}</td>
-                        <td className={`py-2 px-2 text-right font-medium ${p.remaining_hours <= 0 ? 'text-red-600' : 'text-gray-900'}`}>{p.remaining_hours}</td>
-                        <td className="py-2 px-2 text-right text-gray-600">{p.maintenance_days}</td>
-                        <td className="py-2 px-2 text-right text-gray-600">{toDisplayDate(p.due_date)}</td>
+                        <td className="py-2 px-2 text-gray-600 break-words">{p.qty}</td>
+                        <td className="py-2 px-2 text-gray-600 break-words">{p.hours_run}</td>
+                        <td className="py-2 px-2 text-gray-600 break-words">{p.next_hours}</td>
+                        <td className={`py-2 px-2 font-medium break-words ${p.remaining_hours <= 0 ? 'text-red-600' : 'text-gray-900'}`}>{p.remaining_hours}</td>
+                        <td className="py-2 px-2 text-gray-600 break-words">{p.maintenance_days}</td>
+                        <td className="py-2 px-2 text-gray-600 break-words">{toDisplayDate(p.due_date)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -166,7 +166,7 @@ export function ReportView() {
 
           {/* Remarks */}
           <tr>
-            <td colSpan={4} className="border border-gray-900 p-2 align-top break-inside-avoid" style={{ minHeight: '3rem' }}>
+            <td colSpan={4} className="border border-gray-900 p-2 align-top break-inside-avoid text-center break-words" style={{ minHeight: '3rem' }}>
               <p className="text-xs text-gray-500 mb-1">Remarks :</p>
               <p className="text-sm whitespace-pre-wrap">{report.remarks || '—'}</p>
             </td>
@@ -174,11 +174,11 @@ export function ReportView() {
 
           {/* Signatures */}
           <tr>
-            <td colSpan={2} className="border border-gray-900 p-3 pt-8 text-center align-bottom">
+            <td colSpan={2} className="border border-gray-900 p-3 pt-8 text-center align-bottom break-words">
               <p className="font-semibold">Service Engineer</p>
               {report.filed_by?.name && <p className="text-xs font-normal text-gray-600 mt-1">{report.filed_by.name}</p>}
             </td>
-            <td colSpan={2} className="border border-gray-900 p-3 pt-8 text-center align-bottom">
+            <td colSpan={2} className="border border-gray-900 p-3 pt-8 text-center align-bottom break-words">
               <p className="font-semibold">Customer Name, Sign &amp; Seal</p>
             </td>
           </tr>
@@ -251,10 +251,10 @@ export function ReportView() {
 function FieldRow({ label, value, label2, value2 }: { label: string; value: string; label2?: string; value2?: string }) {
   return (
     <tr>
-      <td className="border border-gray-900 p-2 text-xs text-gray-500">{label}</td>
-      <td className="border border-gray-900 p-2 font-medium">{value || '—'}</td>
-      <td className="border border-gray-900 p-2 text-xs text-gray-500">{label2 ?? ''}</td>
-      <td className="border border-gray-900 p-2 font-medium">{label2 ? (value2 || '—') : ''}</td>
+      <td className="border border-gray-900 p-2 text-xs text-gray-500 text-center align-middle break-words">{label}</td>
+      <td className="border border-gray-900 p-2 font-medium text-center align-middle break-words">{value || '—'}</td>
+      <td className="border border-gray-900 p-2 text-xs text-gray-500 text-center align-middle break-words">{label2 ?? ''}</td>
+      <td className="border border-gray-900 p-2 font-medium text-center align-middle break-words">{label2 ? (value2 || '—') : ''}</td>
     </tr>
   )
 }
