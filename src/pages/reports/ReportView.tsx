@@ -195,7 +195,7 @@ export function ReportView() {
   return (
     <Layout>
       <div className="max-w-2xl print:mx-auto">
-        <div className="flex items-center justify-between mb-6 no-print">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6 no-print">
           <div className="flex items-center gap-3">
             <button onClick={() => navigate(`/services/${report.service_id}`)} className="text-gray-400 hover:text-gray-600">← Back</button>
             <div>
@@ -203,9 +203,9 @@ export function ReportView() {
               {report.report_number && <p className="text-xs text-gray-400 font-mono">{srNum(report.report_number)}</p>}
             </div>
           </div>
-          <div className="flex items-center flex-wrap gap-2">
+          <div className="grid grid-cols-3 gap-2 sm:flex sm:items-center">
             <Link to={`/reports/new/${report.service.customer.id}`}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">
+              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors text-center">
               File Report
             </Link>
             <button onClick={() => navigate(`/services/${report.service_id}/reports`)}
@@ -215,7 +215,7 @@ export function ReportView() {
             <div ref={menuRef} className="relative">
               <button
                 onClick={() => setMenuOpen(v => !v)}
-                className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors flex items-center gap-1.5"
+                className="w-full px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors flex items-center justify-center gap-1.5"
               >
                 Download
                 <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z" /></svg>
