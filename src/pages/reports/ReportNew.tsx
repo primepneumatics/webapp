@@ -37,6 +37,7 @@ export function ReportNew() {
   const [fabNumber, setFabNumber] = useState('')
   const [fabError, setFabError] = useState('')
   const [sponsor, setSponsor] = useState('')
+  const [showAddMachine, setShowAddMachine] = useState(false)
   const [remarks, setRemarks] = useState('')
   const [servicedBy, setServicedBy] = useState('')
 
@@ -71,6 +72,14 @@ export function ReportNew() {
     if (match) {
       setFabNumber(match.fab_number)
       setSponsor(match.sponsor ?? '')
+      setFabError('')
+      setShowAddMachine(false)
+    } else if (!showAddMachine) {
+      // Only clear if we're not already mid-way through manually entering a
+      // new machine — otherwise typing the model number would wipe out what
+      // the engineer just typed into FAB Number / Sponsor.
+      setFabNumber('')
+      setSponsor('')
       setFabError('')
     }
   }
@@ -263,20 +272,33 @@ export function ReportNew() {
                   placeholder="e.g. GA30VSD"
                 />
                 {matchedMachine && (
-                  <p className="text-xs text-blue-600 mt-1">Existing machine found for this customer — FAB Number and Sponsor filled in from it.</p>
+                  <p className="text-xs text-blue-600 mt-1">Existing machine found — FAB Number and Sponsor filled in from it.</p>
                 )}
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">FAB Number *</label>
-                <input type="text" value={fabNumber} onChange={e => setFabNumber(alphanumericOnly(e.target.value))} onBlur={checkFab} required
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                {fabError && <p className="text-xs text-red-600 mt-1">{fabError}</p>}
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Sponsor</label>
-                <input type="text" value={sponsor} onChange={e => setSponsor(e.target.value)} placeholder="Dealer / referrer name"
-                  className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
-              </div>
+
+              {matchedMachine || showAddMachine ? (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">FAB Number *</label>
+                    <input type="text" value={fabNumber} onChange={e => setFabNumber(alphanumericOnly(e.target.value))} onBlur={checkFab} required
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    {fabError && <p className="text-xs text-red-600 mt-1">{fabError}</p>}
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Sponsor</label>
+                    <input type="text" value={sponsor} onChange={e => setSponsor(e.target.value)} placeholder="Dealer / referrer name"
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                  </div>
+                </>
+              ) : modelNumber.trim() ? (
+                <div className="flex items-center justify-between gap-3 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
+                  <p className="text-xs text-amber-800">No machine found for this model number.</p>
+                  <button type="button" onClick={() => setShowAddMachine(true)}
+                    className="text-xs font-semibold text-blue-600 hover:underline whitespace-nowrap">
+                    + Add Machine
+                  </button>
+                </div>
+              ) : null}
             </div>
           )}
 
