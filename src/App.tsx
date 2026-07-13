@@ -6,6 +6,7 @@ import { CustomerList } from './pages/customers/CustomerList'
 import { CustomerNew } from './pages/customers/CustomerNew'
 import { CustomerDetail } from './pages/customers/CustomerDetail'
 import { CustomerEdit } from './pages/customers/CustomerEdit'
+import { CustomerReports } from './pages/customers/CustomerReports'
 import { ServiceNew } from './pages/services/ServiceNew'
 import { ServiceDetail } from './pages/services/ServiceDetail'
 import { ServiceEdit } from './pages/services/ServiceEdit'
@@ -33,6 +34,7 @@ export default function App() {
         <Route path="/customers/:id" element={<ProtectedRoute adminOnly><CustomerDetail /></ProtectedRoute>} />
         <Route path="/customers/:id/edit" element={<ProtectedRoute adminOnly><CustomerEdit /></ProtectedRoute>} />
         <Route path="/customers/:id/services/new" element={<ProtectedRoute adminOnly><ServiceNew /></ProtectedRoute>} />
+        <Route path="/customers/:id/reports" element={<ProtectedRoute adminOnly><CustomerReports /></ProtectedRoute>} />
 
         <Route path="/services/:id" element={<ProtectedRoute><ServiceDetail /></ProtectedRoute>} />
         <Route path="/services/:id/edit" element={<ProtectedRoute adminOnly><ServiceEdit /></ProtectedRoute>} />

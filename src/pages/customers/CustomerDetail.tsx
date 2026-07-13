@@ -62,7 +62,7 @@ export function CustomerDetail() {
           )}
         </div>
 
-        <div className="flex gap-3 mb-4">
+        <div className="flex gap-3 mb-3">
           <a
             href={`tel:${customer.phone}`}
             className="flex-1 text-center px-4 py-2.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700 transition-colors"
@@ -75,6 +75,23 @@ export function CustomerDetail() {
               className="flex-1 text-center px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
             >
               Edit Customer
+            </Link>
+          )}
+        </div>
+
+        <div className="flex gap-3 mb-4">
+          <Link
+            to={`/reports/new/${id}`}
+            className="flex-1 text-center px-4 py-2.5 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+          >
+            File Service Report
+          </Link>
+          {isAdmin && (
+            <Link
+              to={`/customers/${id}/reports`}
+              className="flex-1 text-center px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
+            >
+              Report History
             </Link>
           )}
         </div>
