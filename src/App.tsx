@@ -30,7 +30,7 @@ export default function App() {
         <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
 
         <Route path="/customers" element={<ProtectedRoute adminOnly><CustomerList /></ProtectedRoute>} />
-        <Route path="/customers/new" element={<ProtectedRoute adminOnly><CustomerNew /></ProtectedRoute>} />
+        <Route path="/customers/new" element={<ProtectedRoute><CustomerNew /></ProtectedRoute>} />
         <Route path="/customers/:id" element={<ProtectedRoute adminOnly><CustomerDetail /></ProtectedRoute>} />
         <Route path="/customers/:id/edit" element={<ProtectedRoute adminOnly><CustomerEdit /></ProtectedRoute>} />
         <Route path="/customers/:id/services/new" element={<ProtectedRoute adminOnly><ServiceNew /></ProtectedRoute>} />

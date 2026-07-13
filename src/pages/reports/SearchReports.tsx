@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { Layout } from '../../components/Layout'
-import { useAuth } from '../../hooks/useAuth'
 import { toDisplayDate } from '../../utils/dateEngine'
 import { srNum, parseReportNumber } from '../../utils/reportNumber'
 
@@ -20,7 +19,6 @@ type Tab = 'customer' | 'fab' | 'report_no'
 const SELECT_COLS = 'id, report_number, report_date, service:services(fab_number, model_number, customer:customers(name, org))'
 
 export function SearchReports() {
-  const { isAdmin } = useAuth()
   const [tab, setTab] = useState<Tab>('customer')
   const [customerQuery, setCustomerQuery] = useState('')
   const [fabQuery, setFabQuery] = useState('')
@@ -176,14 +174,10 @@ export function SearchReports() {
           tab === 'customer' && matchedCustomers.length === 0 ? (
             <div className="bg-white border border-gray-200 rounded-xl p-10 text-center">
               <p className="text-gray-500 text-sm mb-4">No customer found matching &ldquo;{customerQuery.trim()}&rdquo;.</p>
-              {isAdmin ? (
-                <Link to={`/customers/new?org=${encodeURIComponent(customerQuery.trim())}`}
-                  className="inline-block px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors">
-                  + Add New Customer
-                </Link>
-              ) : (
-                <p className="text-xs text-gray-400">Ask an admin to add this customer.</p>
-              )}
+              <Link to={`/customers/new?org=${encodeURIComponent(customerQuery.trim())}`}
+                className="inline-block px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors">
+                + Add New Customer
+              </Link>
             </div>
           ) : results.length === 0 ? (
             tab === 'customer' && matchedCustomers.length > 0 ? (

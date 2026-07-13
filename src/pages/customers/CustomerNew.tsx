@@ -2,10 +2,12 @@ import { useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { Layout } from '../../components/Layout'
+import { useAuth } from '../../hooks/useAuth'
 
 export function CustomerNew() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
+  const { isAdmin } = useAuth()
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [gstError, setGstError] = useState('')
@@ -40,8 +42,12 @@ export function CustomerNew() {
     if (error) {
       setError('Failed to save customer. Please try again.')
       setSaving(false)
-    } else {
+    } else if (isAdmin) {
       navigate(`/customers/${data.id}`)
+    } else {
+      // Engineers can't view the admin-only customer detail page — send them
+      // straight to filing the first report, which is why they added this customer.
+      navigate(`/reports/new/${data.id}`)
     }
   }
 
@@ -49,7 +55,7 @@ export function CustomerNew() {
     <Layout>
       <div className="max-w-xl">
         <div className="flex items-center gap-3 mb-6">
-          <button onClick={() => navigate('/customers')} className="text-gray-400 hover:text-gray-600">← Back</button>
+          <button onClick={() => navigate(-1)} className="text-gray-400 hover:text-gray-600">← Back</button>
           <h2 className="text-xl font-semibold text-gray-900">Add Customer</h2>
         </div>
 
