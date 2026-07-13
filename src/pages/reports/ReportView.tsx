@@ -205,11 +205,11 @@ export function ReportView() {
           </div>
           <div className="grid grid-cols-3 gap-2 sm:flex sm:items-center">
             <Link to={`/reports/new/${report.service.customer.id}`}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors text-center">
+              className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors flex items-center justify-center">
               File Report
             </Link>
             <button onClick={() => navigate(`/services/${report.service_id}/reports`)}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">
+              className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors flex items-center justify-center">
               Report History
             </button>
             <div ref={menuRef} className="relative">
