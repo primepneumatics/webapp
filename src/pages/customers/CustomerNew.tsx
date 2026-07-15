@@ -60,10 +60,10 @@ export function CustomerNew() {
         </div>
 
         <form onSubmit={handleSubmit} className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
-          <Field label="GST Number" value={form.gst} onChange={set('gst')} onBlur={checkGst} placeholder="e.g. 24AAAAA0000A1Z5" error={gstError} />
+          <Field label="GST Number *" value={form.gst} onChange={set('gst')} onBlur={checkGst} placeholder="e.g. 24AAAAA0000A1Z5" error={gstError} required />
           <Field label="Customer Name *" value={form.name} onChange={set('name')} required />
-          <Field label="Company Name" value={form.org} onChange={set('org')} />
-          <Field label="Address" value={form.address} onChange={set('address')} textarea />
+          <Field label="Company Name *" value={form.org} onChange={set('org')} required />
+          <Field label="Address *" value={form.address} onChange={set('address')} textarea required />
           <Field label="Phone Number *" value={form.phone} onChange={set('phone')} type="tel" required autoComplete="tel" />
 
           {error && <p className="text-sm text-red-600">{error}</p>}
@@ -90,7 +90,7 @@ function Field({
     <div>
       <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
       {textarea
-        ? <textarea value={value} onChange={onChange} onBlur={onBlur} rows={2} placeholder={placeholder} className={cls} />
+        ? <textarea value={value} onChange={onChange} onBlur={onBlur} rows={2} placeholder={placeholder} required={required} className={cls} />
         : <input type={type} value={value} onChange={onChange} onBlur={onBlur} required={required} placeholder={placeholder} autoComplete={autoComplete} className={cls} />
       }
       {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
