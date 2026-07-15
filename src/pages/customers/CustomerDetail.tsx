@@ -26,6 +26,7 @@ export function CustomerDetail() {
   const [customer, setCustomer] = useState<Customer | null>(null)
   const [services, setServices] = useState<Service[]>([])
   const [loading, setLoading] = useState(true)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     Promise.all([
@@ -37,6 +38,21 @@ export function CustomerDetail() {
       setLoading(false)
     })
   }, [id])
+
+  async function handleDelete() {
+    if (!customer) return
+    if (!window.confirm(
+      `Delete ${customer.name}? This will permanently remove this customer along with all of their machines and service reports. This cannot be undone.`
+    )) return
+    setDeleting(true)
+    const { error } = await supabase.from('customers').delete().eq('id', customer.id)
+    if (error) {
+      alert('Failed to delete customer. Please try again.')
+      setDeleting(false)
+      return
+    }
+    navigate('/customers')
+  }
 
   if (loading) return <Layout><p className="text-gray-400 text-sm">Loading...</p></Layout>
   if (!customer) return <Layout><p className="text-red-500 text-sm">Customer not found.</p></Layout>
@@ -95,6 +111,16 @@ export function CustomerDetail() {
             </Link>
           )}
         </div>
+
+        {isAdmin && (
+          <button
+            onClick={handleDelete}
+            disabled={deleting}
+            className="w-full text-center px-4 py-2.5 border border-red-200 text-red-600 rounded-lg text-sm font-medium hover:bg-red-50 disabled:opacity-50 transition-colors mb-4"
+          >
+            {deleting ? 'Deleting...' : 'Delete Customer'}
+          </button>
+        )}
 
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Machines</h3>
