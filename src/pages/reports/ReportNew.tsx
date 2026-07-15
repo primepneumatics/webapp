@@ -109,7 +109,7 @@ export function ReportNew() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (fabError || !fabNumber.trim()) return
+    if (fabError || !fabNumber.trim() || !remarks.trim() || !servicedBy.trim()) return
     setError('')
     setSaving(true)
 
@@ -199,8 +199,8 @@ export function ReportNew() {
         service_id: resolvedServiceId,
         report_date: reportDate,
         total_run_hours: hoursRun,
-        remarks,
-        serviced_by: servicedBy.trim() || null,
+        remarks: remarks.trim(),
+        serviced_by: servicedBy.trim(),
         due_service_date: earliestDue ? toISODate(earliestDue) : null,
         filed_by_id: user?.id ?? null,
       })
@@ -404,16 +404,16 @@ export function ReportNew() {
 
           {/* Remarks */}
           <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Remarks</label>
-            <textarea value={remarks} onChange={e => setRemarks(e.target.value)} rows={3}
+            <label className="block text-sm font-medium text-gray-700 mb-1">Remarks *</label>
+            <textarea value={remarks} onChange={e => setRemarks(e.target.value)} rows={3} required
               className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
           </div>
 
           {/* Service by — filled last */}
           <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Service By</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Service By *</label>
             <SuggestInput value={servicedBy} onChange={setServicedBy} suggestions={engineerSuggestions}
-              placeholder="Engineer name (optional, can fill in later)" />
+              placeholder="Engineer name" required />
           </div>
 
           {error && <p className="text-sm text-red-600">{error}</p>}
