@@ -69,7 +69,7 @@ export function CustomerNew() {
           <Field label="Customer Name *" value={form.name} onChange={set('name')} required />
           <Field label="Company Name *" value={form.org} onChange={set('org')} required />
           <Field label="Address *" value={form.address} onChange={set('address')} textarea required />
-          <Field label="Phone Number *" value={form.phone} onChange={setPhone} type="tel" required autoComplete="tel" placeholder="e.g. 9876543210" />
+          <Field label="Phone Number *" value={form.phone} onChange={setPhone} type="tel" required autoComplete="tel" placeholder="e.g. 9876543210" maxLength={10} hint="10 digits only — do not include +91 or any country code" />
 
           {error && <p className="text-sm text-red-600">{error}</p>}
 
@@ -84,11 +84,11 @@ export function CustomerNew() {
 }
 
 function Field({
-  label, value, onChange, onBlur, type = 'text', required, placeholder, textarea, error, autoComplete
+  label, value, onChange, onBlur, type = 'text', required, placeholder, textarea, error, autoComplete, maxLength, hint
 }: {
   label: string; value: string
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void
-  onBlur?: () => void; type?: string; required?: boolean; placeholder?: string; textarea?: boolean; error?: string; autoComplete?: string
+  onBlur?: () => void; type?: string; required?: boolean; placeholder?: string; textarea?: boolean; error?: string; autoComplete?: string; maxLength?: number; hint?: string
 }) {
   const cls = "w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
   return (
@@ -96,8 +96,9 @@ function Field({
       <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
       {textarea
         ? <textarea value={value} onChange={onChange} onBlur={onBlur} rows={2} placeholder={placeholder} required={required} className={cls} />
-        : <input type={type} value={value} onChange={onChange} onBlur={onBlur} required={required} placeholder={placeholder} autoComplete={autoComplete} className={cls} />
+        : <input type={type} value={value} onChange={onChange} onBlur={onBlur} required={required} placeholder={placeholder} autoComplete={autoComplete} maxLength={maxLength} className={cls} />
       }
+      {hint && !error && <p className="text-xs text-gray-400 mt-1">{hint}</p>}
       {error && <p className="text-xs text-red-600 mt-1">{error}</p>}
     </div>
   )
