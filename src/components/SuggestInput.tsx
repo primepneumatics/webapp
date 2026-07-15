@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 
 export function SuggestInput({
-  value, onChange, suggestions, placeholder, className, required,
+  value, onChange, suggestions, placeholder, className, required, onBlur,
 }: {
   value: string
   onChange: (value: string) => void
@@ -9,6 +9,7 @@ export function SuggestInput({
   placeholder?: string
   className?: string
   required?: boolean
+  onBlur?: () => void
 }) {
   const [open, setOpen] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
@@ -38,6 +39,7 @@ export function SuggestInput({
         value={value}
         onChange={e => { onChange(e.target.value); setOpen(true) }}
         onFocus={() => setOpen(true)}
+        onBlur={onBlur}
         placeholder={placeholder}
         autoComplete="off"
         required={required}
