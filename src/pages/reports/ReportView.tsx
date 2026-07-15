@@ -6,6 +6,7 @@ import { toDisplayDate, today } from '../../utils/dateEngine'
 import { srNum } from '../../utils/reportNumber'
 import { downloadPdf } from '../../utils/downloadPdf'
 import { Layout } from '../../components/Layout'
+import { useAuth } from '../../hooks/useAuth'
 
 type ReportPart = {
   spare_part_id: string
@@ -36,10 +37,12 @@ type Report = {
 export function ReportView() {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
+  const { isAdmin } = useAuth()
   const [report, setReport] = useState<Report | null>(null)
   const [parts, setParts] = useState<ReportPart[]>([])
   const [loading, setLoading] = useState(true)
   const [downloading, setDownloading] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [forCustomer, setForCustomer] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -78,6 +81,21 @@ export function ReportView() {
     await downloadPdf(printRef.current, `${base}${isForCustomer ? '-customer' : ''}.pdf`)
     if (isForCustomer) flushSync(() => setForCustomer(false))
     setDownloading(false)
+  }
+
+  async function handleDelete() {
+    if (!report) return
+    if (!window.confirm(
+      `Delete Service Report ${report.report_number ? srNum(report.report_number) : ''}? This will permanently remove this report and its spare part records. This cannot be undone.`
+    )) return
+    setDeleting(true)
+    const { error } = await supabase.from('service_reports').delete().eq('id', report.id)
+    if (error) {
+      alert('Failed to delete report. Please try again.')
+      setDeleting(false)
+      return
+    }
+    navigate(`/services/${report.service_id}`)
   }
 
   if (loading) return <Layout><p className="text-gray-400 text-sm">Loading...</p></Layout>
@@ -251,6 +269,17 @@ export function ReportView() {
             </div>
           </div>
         </div>
+
+        {isAdmin && (
+          <button
+            onClick={handleDelete}
+            disabled={deleting}
+            className="w-full mb-4 text-center px-4 py-2.5 border border-red-200 text-red-600 rounded-lg text-sm font-medium hover:bg-red-50 disabled:opacity-50 transition-colors no-print"
+          >
+            {deleting ? 'Deleting...' : 'Delete Report'}
+          </button>
+        )}
+
         <div className="border border-gray-200 rounded-xl overflow-hidden print:border-0 print:rounded-none">
           {reportCard}
         </div>
