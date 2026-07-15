@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { Layout } from '../../components/Layout'
-import { alphanumericOnly } from '../../utils/validate'
+import { alphanumericOnly, modelNumberChars } from '../../utils/validate'
 
 type Form = { fab_number: string; model_number: string; sponsor: string }
 
@@ -38,8 +38,12 @@ export function ServiceEdit() {
     return (e: React.ChangeEvent<HTMLInputElement>) => setForm(f => ({ ...f, [field]: e.target.value }))
   }
 
-  function setAlphanumeric(field: 'fab_number' | 'model_number') {
-    return (e: React.ChangeEvent<HTMLInputElement>) => setForm(f => ({ ...f, [field]: alphanumericOnly(e.target.value) }))
+  function setFabNumber(e: React.ChangeEvent<HTMLInputElement>) {
+    setForm(f => ({ ...f, fab_number: alphanumericOnly(e.target.value) }))
+  }
+
+  function setModelNumber(e: React.ChangeEvent<HTMLInputElement>) {
+    setForm(f => ({ ...f, model_number: modelNumberChars(e.target.value) }))
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -79,8 +83,8 @@ export function ServiceEdit() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
-            <Field label="FAB Number *" value={form.fab_number} onChange={setAlphanumeric('fab_number')} onBlur={checkFab} required error={fabError} />
-            <Field label="Model Number" value={form.model_number} onChange={setAlphanumeric('model_number')} />
+            <Field label="FAB Number *" value={form.fab_number} onChange={setFabNumber} onBlur={checkFab} required error={fabError} />
+            <Field label="Model Number" value={form.model_number} onChange={setModelNumber} />
 
             <Field label="Sponsor" value={form.sponsor} onChange={set('sponsor')} />
           </div>

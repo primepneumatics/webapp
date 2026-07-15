@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { Layout } from '../../components/Layout'
 import { SuggestInput } from '../../components/SuggestInput'
-import { alphanumericOnly } from '../../utils/validate'
+import { alphanumericOnly, modelNumberChars } from '../../utils/validate'
 
 type ExistingMachine = { id: string; fab_number: string; model_number: string | null; sponsor: string | null }
 
@@ -32,7 +32,7 @@ export function ServiceNew() {
     : null
 
   function handleModelNumberChange(rawValue: string) {
-    const value = alphanumericOnly(rawValue)
+    const value = modelNumberChars(rawValue)
     const match = existingMachines.find(m => m.model_number === value)
     if (match) {
       setForm({ model_number: value, fab_number: match.fab_number, sponsor: match.sponsor ?? '' })

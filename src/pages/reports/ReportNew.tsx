@@ -6,7 +6,7 @@ import { SuggestInput } from '../../components/SuggestInput'
 import { useEngineerSuggestions } from '../../hooks/useEngineerSuggestions'
 import { toISODate, toDisplayDate, today } from '../../utils/dateEngine'
 import { calcRemaining, addDaysToDate, type PartState } from '../../utils/machineParts'
-import { alphanumericOnly } from '../../utils/validate'
+import { alphanumericOnly, modelNumberChars } from '../../utils/validate'
 
 type SparePart = { id: string; code: string; name: string }
 type ServiceInfo = { id: string; fab_number: string; model_number: string | null; customer_id: string }
@@ -66,7 +66,7 @@ export function ReportNew() {
   }, [routeServiceId, routeCustomerId])
 
   function handleModelNumberChange(rawValue: string) {
-    const value = alphanumericOnly(rawValue)
+    const value = modelNumberChars(rawValue)
     setModelNumber(value)
     const match = existingMachines.find(m => m.model_number === value)
     if (match) {
