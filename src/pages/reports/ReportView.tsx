@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { flushSync } from 'react-dom'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { toDisplayDate, today } from '../../utils/dateEngine'
@@ -39,7 +40,18 @@ export function ReportView() {
   const [parts, setParts] = useState<ReportPart[]>([])
   const [loading, setLoading] = useState(true)
   const [downloading, setDownloading] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [hideSize, setHideSize] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
   const printRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false)
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   useEffect(() => {
     Promise.all([
@@ -56,10 +68,15 @@ export function ReportView() {
     })
   }, [id])
 
-  async function handleDownload() {
+  async function handleDownload(audience: 'engineer' | 'customer') {
     if (!printRef.current) return
+    setMenuOpen(false)
     setDownloading(true)
-    await downloadPdf(printRef.current, `${report?.report_number ? srNum(report.report_number) : 'service-report'}.pdf`)
+    const forCustomer = audience === 'customer'
+    if (forCustomer) flushSync(() => setHideSize(true))
+    const base = report?.report_number ? srNum(report.report_number) : 'service-report'
+    await downloadPdf(printRef.current, `${base}${forCustomer ? '-customer' : ''}.pdf`)
+    if (forCustomer) flushSync(() => setHideSize(false))
     setDownloading(false)
   }
 
@@ -138,7 +155,7 @@ export function ReportView() {
                       <tr key={p.spare_part_id} className="border-t border-gray-100 break-inside-avoid text-center">
                         <td className="py-2 px-2 text-gray-800 break-words">
                           <span className="font-mono text-gray-400 text-xs mr-1">{p.spare_part.code}</span>{p.spare_part.name}
-                          {p.spare_part.size && <span className="text-gray-400 text-xs ml-1">({p.spare_part.size})</span>}
+                          {p.spare_part.size && !hideSize && <span className="text-gray-400 text-xs ml-1">({p.spare_part.size})</span>}
                         </td>
                         <td className="py-2 px-2 text-gray-600 break-words">{p.qty}</td>
                         <td className="py-2 px-2 text-gray-600 break-words">{p.hours_run}</td>
@@ -202,13 +219,32 @@ export function ReportView() {
               className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors flex items-center justify-center">
               Report History
             </button>
-            <button
-              onClick={handleDownload}
-              disabled={downloading}
-              className="w-full px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors flex items-center justify-center disabled:opacity-50"
-            >
-              {downloading ? 'Preparing PDF...' : 'Download'}
-            </button>
+            <div ref={menuRef} className="relative">
+              <button
+                onClick={() => setMenuOpen(v => !v)}
+                disabled={downloading}
+                className="w-full px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors flex items-center justify-center gap-1.5 disabled:opacity-50"
+              >
+                {downloading ? 'Preparing PDF...' : 'Download'}
+                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z" /></svg>
+              </button>
+              {menuOpen && (
+                <div className="absolute right-0 mt-1 w-44 bg-white border border-gray-200 rounded-xl shadow-lg z-20 overflow-hidden">
+                  <button
+                    onClick={() => handleDownload('engineer')}
+                    className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
+                  >
+                    For Engineer
+                  </button>
+                  <button
+                    onClick={() => handleDownload('customer')}
+                    className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 border-t border-gray-100"
+                  >
+                    For Customer
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
         <div className="border border-gray-200 rounded-xl overflow-hidden print:border-0 print:rounded-none">
