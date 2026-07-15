@@ -35,6 +35,7 @@ export function InviteEngineer() {
   const { isAdmin, loading, session } = useAuth()
   const [phone, setPhone] = useState('')
   const [name, setName] = useState('')
+  const [role, setRole] = useState<'engineer' | 'admin'>('engineer')
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [engineers, setEngineers] = useState<Profile[]>([])
@@ -66,7 +67,7 @@ export function InviteEngineer() {
       .maybeSingle()
 
     if (existing) {
-      setError('An engineer with this phone number already exists.')
+      setError('An account with this phone number already exists.')
       setSaving(false)
       return
     }
@@ -76,22 +77,24 @@ export function InviteEngineer() {
         action: 'create',
         phone: normalizedPhone,
         name,
+        role,
       })
 
-      const newEngineer: Profile = {
+      const newProfile: Profile = {
         id,
         name: name.trim() || null,
         phone: normalizedPhone,
-        role: 'engineer',
+        role,
         created_at: new Date().toISOString(),
       }
 
-      setEngineers(prev => [newEngineer, ...prev])
+      setEngineers(prev => [newProfile, ...prev])
       setPhone('')
       setName('')
+      setRole('engineer')
       window.open(buildInviteLink(normalizedPhone, password, `${window.location.origin}/login`), '_blank')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to create engineer.')
+      setError(err instanceof Error ? err.message : 'Failed to create account.')
     } finally {
       setSaving(false)
     }
@@ -134,23 +137,46 @@ export function InviteEngineer() {
           <button onClick={() => navigate(-1)} className="text-gray-400 hover:text-gray-600">
             ← Back
           </button>
-          <h2 className="text-xl font-semibold text-gray-900">Invite Engineer</h2>
+          <h2 className="text-xl font-semibold text-gray-900">Invite User</h2>
         </div>
 
         <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
           <p className="text-sm text-gray-500 mb-6">
-            Enter the new engineer's phone number. A password will be generated and WhatsApp will open
+            Enter the new user's phone number. A password will be generated and WhatsApp will open
             so you can send their login credentials.
           </p>
 
           <form onSubmit={handleInvite} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setRole('engineer')}
+                  className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                    role === 'engineer' ? 'bg-gray-900 text-white border-gray-900' : 'bg-white border-gray-300 text-gray-700'
+                  }`}
+                >
+                  Engineer
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRole('admin')}
+                  className={`flex-1 px-4 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                    role === 'admin' ? 'bg-gray-900 text-white border-gray-900' : 'bg-white border-gray-300 text-gray-700'
+                  }`}
+                >
+                  Admin
+                </button>
+              </div>
+            </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
               <input
                 type="text"
                 value={name}
                 onChange={e => setName(e.target.value)}
-                placeholder="Engineer's name"
+                placeholder={role === 'admin' ? "Admin's name" : "Engineer's name"}
                 className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
@@ -180,10 +206,10 @@ export function InviteEngineer() {
         </div>
 
         <div>
-          <h3 className="text-sm font-semibold text-gray-700 mb-3">Engineers ({engineers.length})</h3>
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">Users ({engineers.length})</h3>
           {engineers.length === 0 ? (
             <div className="bg-white border border-gray-200 rounded-xl p-8 text-center">
-              <p className="text-sm text-gray-400">No engineers yet.</p>
+              <p className="text-sm text-gray-400">No users yet.</p>
             </div>
           ) : (
             <div className="space-y-2">

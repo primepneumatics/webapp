@@ -36,9 +36,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return
     }
 
-    const { action, phone, name, userId } = req.body ?? {}
+    const { action, phone, name, userId, role } = req.body ?? {}
 
     if (action === 'create') {
+      const targetRole = role === 'admin' ? 'admin' : 'engineer'
       const password = generatePassword()
       const { data, error } = await admin.auth.admin.createUser({
         email: toAuthEmail(phone),
@@ -46,19 +47,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         email_confirm: true,
       })
       if (error || !data.user) {
-        res.status(400).json({ error: error?.message ?? 'Failed to create engineer.' })
+        res.status(400).json({ error: error?.message ?? 'Failed to create account.' })
         return
       }
 
       const { error: profileError } = await admin.from('profiles').insert({
         id: data.user.id,
         phone,
-        role: 'engineer',
+        role: targetRole,
         ...(name?.trim() ? { name: name.trim() } : {}),
       })
       if (profileError) {
         await admin.auth.admin.deleteUser(data.user.id)
-        res.status(400).json({ error: 'Failed to create engineer profile.' })
+        res.status(400).json({ error: 'Failed to create profile.' })
         return
       }
 
