@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { Layout } from '../../components/Layout'
 import { useAuth } from '../../hooks/useAuth'
+import { phoneDigits } from '../../utils/validate'
 
 export function CustomerNew() {
   const navigate = useNavigate()
@@ -25,6 +26,10 @@ export function CustomerNew() {
   function set(field: keyof typeof form) {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       setForm(f => ({ ...f, [field]: e.target.value }))
+  }
+
+  function setPhone(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
+    setForm(f => ({ ...f, phone: phoneDigits(e.target.value) }))
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -64,7 +69,7 @@ export function CustomerNew() {
           <Field label="Customer Name *" value={form.name} onChange={set('name')} required />
           <Field label="Company Name *" value={form.org} onChange={set('org')} required />
           <Field label="Address *" value={form.address} onChange={set('address')} textarea required />
-          <Field label="Phone Number *" value={form.phone} onChange={set('phone')} type="tel" required autoComplete="tel" />
+          <Field label="Phone Number *" value={form.phone} onChange={setPhone} type="tel" required autoComplete="tel" placeholder="e.g. 9876543210" />
 
           {error && <p className="text-sm text-red-600">{error}</p>}
 

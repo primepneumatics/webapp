@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { Layout } from '../../components/Layout'
+import { phoneDigits } from '../../utils/validate'
 
 type Form = { gst: string; name: string; org: string; address: string; phone: string }
 
@@ -17,7 +18,7 @@ export function CustomerEdit() {
   useEffect(() => {
     supabase.from('customers').select('*').eq('id', id).single().then(({ data: customer }) => {
       if (customer) {
-        setForm({ gst: customer.gst || '', name: customer.name || '', org: customer.org || '', address: customer.address || '', phone: customer.phone || '' })
+        setForm({ gst: customer.gst || '', name: customer.name || '', org: customer.org || '', address: customer.address || '', phone: phoneDigits(customer.phone || '') })
       }
       setLoading(false)
     })
@@ -32,6 +33,10 @@ export function CustomerEdit() {
   function set(field: keyof Form) {
     return (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
       setForm(f => ({ ...f, [field]: e.target.value }))
+  }
+
+  function setPhone(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) {
+    setForm(f => ({ ...f, phone: phoneDigits(e.target.value) }))
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -68,7 +73,7 @@ export function CustomerEdit() {
           <Field label="Customer Name *" value={form.name} onChange={set('name')} required />
           <Field label="Company Name *" value={form.org} onChange={set('org')} required />
           <Field label="Address *" value={form.address} onChange={set('address')} textarea required />
-          <Field label="Phone Number *" value={form.phone} onChange={set('phone')} type="tel" required autoComplete="tel" />
+          <Field label="Phone Number *" value={form.phone} onChange={setPhone} type="tel" required autoComplete="tel" placeholder="e.g. 9876543210" />
 
           {error && <p className="text-sm text-red-600">{error}</p>}
 
