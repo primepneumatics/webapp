@@ -2,10 +2,6 @@ export function alphanumericOnly(value: string): string {
   return value.replace(/[^a-zA-Z0-9]/g, '')
 }
 
-export function modelNumberChars(value: string): string {
-  return value.replace(/[^a-zA-Z0-9. ]/g, '')
-}
-
 export function phoneDigits(value: string): string {
   return value.replace(/\D/g, '').slice(0, 10)
 }
