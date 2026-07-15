@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { Layout } from '../../components/Layout'
 import { useAuth } from '../../hooks/useAuth'
@@ -26,7 +26,6 @@ export function SparePartsList() {
   }, [])
 
   if (loading) return null
-  if (!isAdmin) return <Navigate to="/dashboard" replace />
 
   function set(f: Form, setter: (f: Form) => void) {
     return (field: keyof Form) => (e: React.ChangeEvent<HTMLInputElement>) =>
@@ -136,11 +135,13 @@ export function SparePartsList() {
                       </div>
                       {p.size && <p className="text-xs text-gray-400">{p.size}</p>}
                     </div>
-                    <div className="flex gap-3 shrink-0">
-                      <button onClick={() => { setEditId(p.id); setEditForm({ code: p.code, name: p.name, size: p.size || '' }) }}
-                        className="text-xs text-blue-600 hover:underline">Edit</button>
-                      <button onClick={() => handleDelete(p.id)} className="text-xs text-red-500 hover:underline">Delete</button>
-                    </div>
+                    {isAdmin && (
+                      <div className="flex gap-3 shrink-0">
+                        <button onClick={() => { setEditId(p.id); setEditForm({ code: p.code, name: p.name, size: p.size || '' }) }}
+                          className="text-xs text-blue-600 hover:underline">Edit</button>
+                        <button onClick={() => handleDelete(p.id)} className="text-xs text-red-500 hover:underline">Delete</button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

@@ -23,8 +23,9 @@ export function More() {
           <p className="text-xs text-gray-400 mt-0.5 capitalize">{role ?? 'engineer'}</p>
         </div>
 
-        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden divide-y divide-gray-100">
           <MenuItem label="My Profile" onClick={() => navigate('/profile')} />
+          <MenuItem label="Spare Parts" onClick={() => navigate('/admin/spare-parts')} />
         </div>
 
         {isAdmin && (
@@ -32,7 +33,6 @@ export function More() {
             <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide px-1 mb-2">Admin</p>
             <div className="bg-white border border-gray-200 rounded-xl overflow-hidden divide-y divide-gray-100">
               <MenuItem label="Invite User" onClick={() => navigate('/admin/invite')} />
-              <MenuItem label="Spare Parts" onClick={() => navigate('/admin/spare-parts')} />
               <MenuItem label="Settings" onClick={() => navigate('/admin/settings')} />
             </div>
           </div>
