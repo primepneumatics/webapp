@@ -41,7 +41,7 @@ export function ReportView() {
   const [loading, setLoading] = useState(true)
   const [downloading, setDownloading] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
-  const [hideSize, setHideSize] = useState(false)
+  const [forCustomer, setForCustomer] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const printRef = useRef<HTMLDivElement>(null)
 
@@ -72,11 +72,11 @@ export function ReportView() {
     if (!printRef.current) return
     setMenuOpen(false)
     setDownloading(true)
-    const forCustomer = audience === 'customer'
-    if (forCustomer) flushSync(() => setHideSize(true))
+    const isForCustomer = audience === 'customer'
+    if (isForCustomer) flushSync(() => setForCustomer(true))
     const base = report?.report_number ? srNum(report.report_number) : 'service-report'
-    await downloadPdf(printRef.current, `${base}${forCustomer ? '-customer' : ''}.pdf`)
-    if (forCustomer) flushSync(() => setHideSize(false))
+    await downloadPdf(printRef.current, `${base}${isForCustomer ? '-customer' : ''}.pdf`)
+    if (isForCustomer) flushSync(() => setForCustomer(false))
     setDownloading(false)
   }
 
@@ -142,6 +142,7 @@ export function ReportView() {
                   <thead>
                     <tr className="text-center text-xs text-gray-500 bg-gray-50">
                       <th className="py-2 px-2 border-t border-gray-200 break-words">Part</th>
+                      {!forCustomer && <th className="py-2 px-2 border-t border-gray-200 break-words">Size</th>}
                       <th className="py-2 px-2 border-t border-gray-200 break-words">Qty</th>
                       <th className="py-2 px-2 border-t border-gray-200 break-words">Hours Run</th>
                       <th className="py-2 px-2 border-t border-gray-200 break-words">Next Hours</th>
@@ -154,9 +155,12 @@ export function ReportView() {
                     {parts.map(p => (
                       <tr key={p.spare_part_id} className="border-t border-gray-100 break-inside-avoid text-center">
                         <td className="py-2 px-2 text-gray-800 break-words">
-                          <span className="font-mono text-gray-400 text-xs mr-1">{p.spare_part.code}</span>{p.spare_part.name}
-                          {p.spare_part.size && !hideSize && <span className="text-gray-400 text-xs ml-1">({p.spare_part.size})</span>}
+                          {!forCustomer && <span className="font-mono text-gray-400 text-xs mr-1">{p.spare_part.code}</span>}
+                          {p.spare_part.name}
                         </td>
+                        {!forCustomer && (
+                          <td className="py-2 px-2 text-gray-600 break-words">{p.spare_part.size || '—'}</td>
+                        )}
                         <td className="py-2 px-2 text-gray-600 break-words">{p.qty}</td>
                         <td className="py-2 px-2 text-gray-600 break-words">{p.hours_run}</td>
                         <td className="py-2 px-2 text-gray-600 break-words">{p.next_hours}</td>
