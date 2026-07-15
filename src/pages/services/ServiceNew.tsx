@@ -27,17 +27,22 @@ export function ServiceNew() {
     })
   }, [customerId])
 
-  const matchedMachine = form.model_number
-    ? existingMachines.find(m => m.model_number === form.model_number) ?? null
+  const matchedMachine = form.fab_number
+    ? existingMachines.find(m => m.fab_number === form.fab_number) ?? null
     : null
 
-  function handleModelNumberChange(value: string) {
-    const match = existingMachines.find(m => m.model_number === value)
+  function handleFabNumberChange(rawValue: string) {
+    // FAB Number is the machine's unique identifier (globally unique, one per
+    // physical unit) — Model Number is just a descriptive model name that can
+    // repeat across several distinct machines a customer owns, so matching
+    // must key off FAB Number, never Model Number.
+    const value = alphanumericOnly(rawValue)
+    const match = existingMachines.find(m => m.fab_number === value)
     if (match) {
-      setForm({ model_number: value, fab_number: match.fab_number, sponsor: match.sponsor ?? '' })
+      setForm({ fab_number: value, model_number: match.model_number ?? '', sponsor: match.sponsor ?? '' })
       setFabError('')
     } else {
-      setForm(f => ({ ...f, model_number: value }))
+      setForm(f => ({ ...f, fab_number: value }))
     }
   }
 
@@ -51,10 +56,6 @@ export function ServiceNew() {
 
   function set(field: keyof typeof form) {
     return (e: React.ChangeEvent<HTMLInputElement>) => setForm(f => ({ ...f, [field]: e.target.value }))
-  }
-
-  function setAlphanumeric(field: 'fab_number' | 'model_number') {
-    return (e: React.ChangeEvent<HTMLInputElement>) => setForm(f => ({ ...f, [field]: alphanumericOnly(e.target.value) }))
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -116,20 +117,25 @@ export function ServiceNew() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
-            <Field label="FAB Number *" value={form.fab_number} onChange={setAlphanumeric('fab_number')} onBlur={checkFab} required error={fabError} placeholder="e.g. FAB2K91A" />
-
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Model Number</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">FAB Number *</label>
               <SuggestInput
-                value={form.model_number}
-                onChange={handleModelNumberChange}
-                suggestions={existingMachines.map(m => m.model_number).filter((v): v is string => !!v)}
-                placeholder="e.g. GA30VSD"
+                value={form.fab_number}
+                onChange={handleFabNumberChange}
+                onBlur={checkFab}
+                suggestions={existingMachines.map(m => m.fab_number)}
+                placeholder="e.g. FAB2K91A"
+                className="w-full border border-gray-300 rounded-lg px-3 py-2.5 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-blue-500"
+                required
               />
-              {matchedMachine && (
-                <p className="text-xs text-blue-600 mt-1">Existing machine found for this customer — FAB Number and Sponsor filled in from it.</p>
-              )}
+              {fabError ? (
+                <p className="text-xs text-red-600 mt-1">{fabError}</p>
+              ) : matchedMachine ? (
+                <p className="text-xs text-blue-600 mt-1">Existing machine found for this customer — Model Number and Sponsor filled in from it.</p>
+              ) : null}
             </div>
+
+            <Field label="Model Number" value={form.model_number} onChange={set('model_number')} placeholder="e.g. GA30VSD" />
 
             <Field label="Sponsor" value={form.sponsor} onChange={set('sponsor')} placeholder="Dealer / referrer name" />
           </div>
