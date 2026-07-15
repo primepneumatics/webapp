@@ -8,10 +8,10 @@ import { toISODate, toDisplayDate, today } from '../../utils/dateEngine'
 import { calcRemaining, addDaysToDate, type PartState } from '../../utils/machineParts'
 import { alphanumericOnly } from '../../utils/validate'
 
-type SparePart = { id: string; code: string; name: string }
+type SparePart = { id: string; code: string; name: string; size: string | null }
 type ServiceInfo = { id: string; fab_number: string; model_number: string | null; customer_id: string }
 type ExistingMachine = { id: string; fab_number: string; model_number: string | null; sponsor: string | null }
-type TrackedPart = { spare_part_id: string; code: string; name: string; qty: string; hours_per_day: string; remaining_hrs: string; maintenance_days: string }
+type TrackedPart = { spare_part_id: string; code: string; name: string; size: string | null; qty: string; hours_per_day: string; remaining_hrs: string; maintenance_days: string }
 
 export function ReportNew() {
   const { id: routeServiceId, customerId: routeCustomerId } = useParams<{ id?: string; customerId?: string }>()
@@ -58,7 +58,7 @@ export function ReportNew() {
         if (cust) setCustomerName(cust.name)
         if (machines) setExistingMachines(machines)
       }
-      const { data: spares } = await supabase.from('spare_parts').select('id, code, name').order('code')
+      const { data: spares } = await supabase.from('spare_parts').select('id, code, name, size').order('code')
       if (spares) setSpareParts(spares)
       setLoading(false)
     }
@@ -95,7 +95,7 @@ export function ReportNew() {
   function addTrackedPart() {
     const part = spareParts.find(p => p.id === trackPartId)
     if (!part || trackedParts.some(tp => tp.spare_part_id === part.id)) return
-    setTrackedParts(prev => [...prev, { spare_part_id: part.id, code: part.code, name: part.name, qty: '1', hours_per_day: '24', remaining_hrs: '0', maintenance_days: '0' }])
+    setTrackedParts(prev => [...prev, { spare_part_id: part.id, code: part.code, name: part.name, size: part.size, qty: '1', hours_per_day: '24', remaining_hrs: '0', maintenance_days: '0' }])
     setTrackPartId('')
   }
 
@@ -335,7 +335,7 @@ export function ReportNew() {
                 className="flex-1 min-w-0 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 <option value="">Select spare part...</option>
                 {spareParts.filter(p => !trackedParts.some(tp => tp.spare_part_id === p.id)).map(p => (
-                  <option key={p.id} value={p.id}>{p.code} — {p.name}</option>
+                  <option key={p.id} value={p.id}>{p.code} — {p.name}{p.size ? ` (${p.size})` : ''}</option>
                 ))}
               </select>
               <button type="button" onClick={addTrackedPart} disabled={!trackPartId}
@@ -359,6 +359,7 @@ export function ReportNew() {
                     <div className="flex items-center justify-between mb-2">
                       <p className="text-sm font-medium text-gray-800">
                         <span className="font-mono text-gray-400 text-xs mr-1">{tp.code}</span>{tp.name}
+                        {tp.size && <span className="text-gray-400 text-xs ml-1">({tp.size})</span>}
                       </p>
                       <button type="button" onClick={() => removeTrackedPart(tp.spare_part_id)}
                         className="text-red-400 hover:text-red-600 text-xs">×</button>

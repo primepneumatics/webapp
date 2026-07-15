@@ -15,7 +15,7 @@ type ReportPart = {
   remaining_hours: number
   due_date: string
   maintenance_days: number
-  spare_part: { code: string; name: string }
+  spare_part: { code: string; name: string; size: string | null }
 }
 
 type Report = {
@@ -48,7 +48,7 @@ export function ReportView() {
         .select('*, service:services(fab_number, model_number, sponsor, customer:customers(id, name, org, phone, gst)), filed_by:profiles!filed_by_id(name, phone)')
         .eq('id', id)
         .single(),
-      supabase.from('service_report_parts').select('*, spare_part:spare_parts(code, name)').eq('service_report_id', id),
+      supabase.from('service_report_parts').select('*, spare_part:spare_parts(code, name, size)').eq('service_report_id', id),
     ]).then(([{ data }, { data: partsData }]) => {
       setReport(data as unknown as Report)
       if (partsData) setParts(partsData)
@@ -138,6 +138,7 @@ export function ReportView() {
                       <tr key={p.spare_part_id} className="border-t border-gray-100 break-inside-avoid text-center">
                         <td className="py-2 px-2 text-gray-800 break-words">
                           <span className="font-mono text-gray-400 text-xs mr-1">{p.spare_part.code}</span>{p.spare_part.name}
+                          {p.spare_part.size && <span className="text-gray-400 text-xs ml-1">({p.spare_part.size})</span>}
                         </td>
                         <td className="py-2 px-2 text-gray-600 break-words">{p.qty}</td>
                         <td className="py-2 px-2 text-gray-600 break-words">{p.hours_run}</td>

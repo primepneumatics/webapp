@@ -13,7 +13,7 @@ type Service = {
   customer: { id: string; name: string; org: string; phone: string }
 }
 
-type MachinePart = PartState & { spare_part_id: string; spare_part: { code: string; name: string } }
+type MachinePart = PartState & { spare_part_id: string; spare_part: { code: string; name: string; size: string | null } }
 
 export function ServiceDetail() {
   const { id } = useParams<{ id: string }>()
@@ -26,7 +26,7 @@ export function ServiceDetail() {
   useEffect(() => {
     Promise.all([
       supabase.from('services').select('id, fab_number, model_number, sponsor, customer:customers(id, name, org, phone)').eq('id', id).single(),
-      supabase.from('service_machine_parts').select('*, spare_part:spare_parts(code, name)').eq('service_id', id),
+      supabase.from('service_machine_parts').select('*, spare_part:spare_parts(code, name, size)').eq('service_id', id),
     ]).then(([{ data: svc }, { data: partsData }]) => {
       setService(svc as unknown as Service)
       if (partsData) setParts(partsData as unknown as MachinePart[])
@@ -84,6 +84,7 @@ export function ServiceDetail() {
                   <div className="flex items-center justify-between mb-1">
                     <p className="text-sm font-medium text-gray-900">
                       <span className="font-mono text-gray-400 text-xs mr-1">{p.spare_part.code}</span>{p.spare_part.name}
+                      {p.spare_part.size && <span className="text-gray-400 text-xs ml-1">({p.spare_part.size})</span>}
                     </p>
                     <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${overdue ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
                       {overdue ? 'Overdue' : `${Math.ceil(days)}d left`}
