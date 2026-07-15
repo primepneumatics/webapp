@@ -39,17 +39,7 @@ export function ReportView() {
   const [parts, setParts] = useState<ReportPart[]>([])
   const [loading, setLoading] = useState(true)
   const [downloading, setDownloading] = useState(false)
-  const [menuOpen, setMenuOpen] = useState(false)
-  const menuRef = useRef<HTMLDivElement>(null)
   const printRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false)
-    }
-    document.addEventListener('mousedown', handleClickOutside)
-    return () => document.removeEventListener('mousedown', handleClickOutside)
-  }, [])
 
   useEffect(() => {
     Promise.all([
@@ -67,7 +57,6 @@ export function ReportView() {
   }, [id])
 
   async function handleDownload() {
-    setMenuOpen(false)
     if (!printRef.current) return
     setDownloading(true)
     await downloadPdf(printRef.current, `${report?.report_number ? srNum(report.report_number) : 'service-report'}.pdf`)
@@ -212,32 +201,13 @@ export function ReportView() {
               className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors flex items-center justify-center">
               Report History
             </button>
-            <div ref={menuRef} className="relative">
-              <button
-                onClick={() => setMenuOpen(v => !v)}
-                className="w-full px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors flex items-center justify-center gap-1.5"
-              >
-                Download
-                <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M7 10l5 5 5-5z" /></svg>
-              </button>
-              {menuOpen && (
-                <div className="absolute right-0 mt-1 w-44 bg-white border border-gray-200 rounded-xl shadow-lg z-20 overflow-hidden">
-                  <button
-                    onClick={() => { setMenuOpen(false); window.print() }}
-                    className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50"
-                  >
-                    Print
-                  </button>
-                  <button
-                    onClick={handleDownload}
-                    disabled={downloading}
-                    className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 border-t border-gray-100 disabled:opacity-50"
-                  >
-                    {downloading ? 'Preparing PDF...' : 'Download PDF'}
-                  </button>
-                </div>
-              )}
-            </div>
+            <button
+              onClick={handleDownload}
+              disabled={downloading}
+              className="w-full px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors flex items-center justify-center disabled:opacity-50"
+            >
+              {downloading ? 'Preparing PDF...' : 'Download'}
+            </button>
           </div>
         </div>
         <div className="border border-gray-200 rounded-xl overflow-hidden print:border-0 print:rounded-none">

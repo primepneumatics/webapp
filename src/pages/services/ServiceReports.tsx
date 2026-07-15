@@ -70,12 +70,6 @@ export function ServiceReports() {
           </div>
           <div className="flex items-center gap-2">
             <button
-              onClick={() => window.print()}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors"
-            >
-              Print
-            </button>
-            <button
               onClick={handleDownload}
               disabled={downloading}
               className="px-4 py-2 bg-gray-900 text-white rounded-lg text-sm font-medium hover:bg-gray-800 transition-colors disabled:opacity-50"
