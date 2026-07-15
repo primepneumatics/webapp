@@ -18,7 +18,7 @@ type DueService = {
     fab_number: string
     model_number: string | null
     sponsor: string | null
-    customer: { name: string; phone: string }
+    customer: { name: string; org: string; phone: string }
   }
 }
 
@@ -43,7 +43,7 @@ export function Dashboard() {
       ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90)
       const ninetyDaysAgoStr = toISODate(ninetyDaysAgo)
 
-      const selectCols = 'id, report_number, due_service_date, report_date, service:services(id, fab_number, model_number, sponsor, customer:customers(name, phone))'
+      const selectCols = 'id, report_number, due_service_date, report_date, service:services(id, fab_number, model_number, sponsor, customer:customers(name, org, phone))'
 
       const weekQuery = supabase
         .from('service_reports')
@@ -141,7 +141,7 @@ export function Dashboard() {
           {services.map(s => {
             const isPastDue = s.due_service_date < todayStr
             const message = buildReminderMessage(template, {
-              name: s.service.customer.name,
+              name: s.service.customer.org || s.service.customer.name,
               model: s.service.model_number || 'machine',
               date: toDisplayDate(s.due_service_date),
             })
@@ -151,7 +151,7 @@ export function Dashboard() {
               <div key={s.id} className="bg-white border border-gray-200 rounded-xl p-4">
                 <div className="flex items-start justify-between mb-1">
                   <div>
-                    <p className="font-semibold text-gray-900 text-sm">{s.service.customer.name}</p>
+                    <p className="font-semibold text-gray-900 text-sm">{s.service.customer.org || s.service.customer.name}</p>
                     {s.report_number && <p className="text-xs font-mono text-gray-400">{srNum(s.report_number)}</p>}
                   </div>
                   {isPastDue ? (
