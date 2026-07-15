@@ -24,14 +24,12 @@ type Report = {
   id: string
   report_number: number
   service_id: string
-  filed_by_id: string | null
   report_date: string
   total_run_hours: number
   remarks: string
   serviced_by: string | null
   due_service_date: string | null
   service: { fab_number: string; model_number: string | null; sponsor: string | null; customer: { id: string; name: string; org: string; phone: string; gst: string } }
-  filed_by: { name: string | null; phone: string } | null
 }
 
 export function ReportView() {
@@ -60,7 +58,7 @@ export function ReportView() {
     Promise.all([
       supabase
         .from('service_reports')
-        .select('*, service:services(fab_number, model_number, sponsor, customer:customers(id, name, org, phone, gst)), filed_by:profiles!filed_by_id(name, phone)')
+        .select('*, service:services(fab_number, model_number, sponsor, customer:customers(id, name, org, phone, gst))')
         .eq('id', id)
         .single(),
       supabase.from('service_report_parts').select('*, spare_part:spare_parts(code, name, size)').eq('service_report_id', id),
@@ -205,7 +203,7 @@ export function ReportView() {
           <tr>
             <td colSpan={2} className="border border-gray-900 p-3 pt-8 text-center align-bottom break-words">
               <p className="font-semibold">Service Engineer</p>
-              {report.filed_by?.name && <p className="text-xs font-normal text-gray-600 mt-1">{report.filed_by.name}</p>}
+              {report.serviced_by && <p className="text-xs font-normal text-gray-600 mt-1">{report.serviced_by}</p>}
             </td>
             <td colSpan={2} className="border border-gray-900 p-3 pt-8 text-center align-bottom break-words">
               <p className="font-semibold">Customer Name, Sign &amp; Seal</p>
