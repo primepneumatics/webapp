@@ -29,7 +29,7 @@ type Report = {
   remarks: string
   serviced_by: string | null
   due_service_date: string | null
-  service: { fab_number: string; model_number: string | null; sponsor: string | null; customer: { id: string; name: string; org: string; phone: string; gst: string } }
+  service: { fab_number: string; model_number: string | null; sponsor: string | null; customer: { id: string; name: string; org: string; address: string; phone: string; gst: string } }
 }
 
 export function ReportView() {
@@ -58,7 +58,7 @@ export function ReportView() {
     Promise.all([
       supabase
         .from('service_reports')
-        .select('*, service:services(fab_number, model_number, sponsor, customer:customers(id, name, org, phone, gst))')
+        .select('*, service:services(fab_number, model_number, sponsor, customer:customers(id, name, org, address, phone, gst))')
         .eq('id', id)
         .single(),
       supabase.from('service_report_parts').select('*, spare_part:spare_parts(code, name, size)').eq('service_report_id', id),
@@ -149,6 +149,9 @@ export function ReportView() {
                 {report.service.customer.name}
                 {report.service.customer.org ? ` — ${report.service.customer.org}` : ''}
               </p>
+              {report.service.customer.address && (
+                <p className="text-sm text-gray-700 mt-0.5">{report.service.customer.address}</p>
+              )}
             </td>
           </tr>
           <FieldRow label="Contact No" value={report.service.customer.phone} label2="GST" value2={report.service.customer.gst} />
