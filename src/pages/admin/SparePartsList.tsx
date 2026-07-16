@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { Layout } from '../../components/Layout'
+import { ConfirmDeleteModal } from '../../components/ConfirmDeleteModal'
 import { useAuth } from '../../hooks/useAuth'
 
 type SparePart = { id: string; code: string; name: string; size: string | null }
@@ -18,6 +19,8 @@ export function SparePartsList() {
   const [editForm, setEditForm] = useState<Form>(empty)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null)
 
   useEffect(() => {
     supabase.from('spare_parts').select('*').order('code').then(({ data }) => {
@@ -65,8 +68,10 @@ export function SparePartsList() {
   }
 
   async function handleDelete(id: string) {
-    if (!window.confirm('Delete this spare part? This cannot be undone.')) return
+    setDeletingId(id)
     const { error } = await supabase.from('spare_parts').delete().eq('id', id)
+    setDeletingId(null)
+    setConfirmingDeleteId(null)
     if (error) { setError(error.message); return }
     setParts(prev => prev.filter(p => p.id !== id))
   }
@@ -139,7 +144,7 @@ export function SparePartsList() {
                       <div className="flex gap-3 shrink-0">
                         <button onClick={() => { setEditId(p.id); setEditForm({ code: p.code, name: p.name, size: p.size || '' }) }}
                           className="text-xs text-blue-600 hover:underline">Edit</button>
-                        <button onClick={() => handleDelete(p.id)} className="text-xs text-red-500 hover:underline">Delete</button>
+                        <button onClick={() => setConfirmingDeleteId(p.id)} className="text-xs text-red-500 hover:underline">Delete</button>
                       </div>
                     )}
                   </div>
@@ -147,6 +152,16 @@ export function SparePartsList() {
               </div>
             ))}
           </div>
+        )}
+
+        {confirmingDeleteId && (
+          <ConfirmDeleteModal
+            title={`Delete ${parts.find(p => p.id === confirmingDeleteId)?.name ?? 'this spare part'}?`}
+            warning="This will permanently remove this spare part, including its tracking on any machines and its usage history in filed reports. This cannot be undone."
+            confirming={deletingId === confirmingDeleteId}
+            onConfirm={() => handleDelete(confirmingDeleteId)}
+            onCancel={() => setConfirmingDeleteId(null)}
+          />
         )}
       </div>
     </Layout>

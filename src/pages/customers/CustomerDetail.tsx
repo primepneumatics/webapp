@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { Layout } from '../../components/Layout'
+import { ConfirmDeleteModal } from '../../components/ConfirmDeleteModal'
 import { useAuth } from '../../hooks/useAuth'
 
 type Customer = {
@@ -27,6 +28,7 @@ export function CustomerDetail() {
   const [services, setServices] = useState<Service[]>([])
   const [loading, setLoading] = useState(true)
   const [deleting, setDeleting] = useState(false)
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
 
   useEffect(() => {
     Promise.all([
@@ -41,14 +43,12 @@ export function CustomerDetail() {
 
   async function handleDelete() {
     if (!customer) return
-    if (!window.confirm(
-      `Delete ${customer.name}? This will permanently remove this customer along with all of their machines and service reports. This cannot be undone.`
-    )) return
     setDeleting(true)
     const { error } = await supabase.from('customers').delete().eq('id', customer.id)
     if (error) {
-      alert('Failed to delete customer. Please try again.')
+      alert(`Failed to delete customer: ${error.message}`)
       setDeleting(false)
+      setConfirmingDelete(false)
       return
     }
     navigate('/customers')
@@ -114,12 +114,22 @@ export function CustomerDetail() {
 
         {isAdmin && (
           <button
-            onClick={handleDelete}
+            onClick={() => setConfirmingDelete(true)}
             disabled={deleting}
             className="w-full text-center px-4 py-2.5 border border-red-200 text-red-600 rounded-lg text-sm font-medium hover:bg-red-50 disabled:opacity-50 transition-colors mb-4"
           >
             {deleting ? 'Deleting...' : 'Delete Customer'}
           </button>
+        )}
+
+        {confirmingDelete && (
+          <ConfirmDeleteModal
+            title={`Delete ${customer.name}?`}
+            warning="This will permanently remove this customer along with all of their machines and service reports. This cannot be undone."
+            confirming={deleting}
+            onConfirm={handleDelete}
+            onCancel={() => setConfirmingDelete(false)}
+          />
         )}
 
         <div className="flex items-center justify-between mb-3">

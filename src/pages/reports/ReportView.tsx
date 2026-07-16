@@ -5,6 +5,7 @@ import { toDisplayDate, today } from '../../utils/dateEngine'
 import { srNum } from '../../utils/reportNumber'
 import { downloadPdf } from '../../utils/downloadPdf'
 import { Layout } from '../../components/Layout'
+import { ConfirmDeleteModal } from '../../components/ConfirmDeleteModal'
 import { useAuth } from '../../hooks/useAuth'
 
 type ReportPart = {
@@ -40,6 +41,7 @@ export function ReportView() {
   const [loading, setLoading] = useState(true)
   const [downloading, setDownloading] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [confirmingDelete, setConfirmingDelete] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const printRef = useRef<HTMLDivElement>(null)
@@ -92,14 +94,12 @@ export function ReportView() {
 
   async function handleDelete() {
     if (!report) return
-    if (!window.confirm(
-      `Delete Service Report ${report.report_number ? srNum(report.report_number) : ''}? This will permanently remove this report and its spare part records. This cannot be undone.`
-    )) return
     setDeleting(true)
     const { error } = await supabase.from('service_reports').delete().eq('id', report.id)
     if (error) {
-      alert('Failed to delete report. Please try again.')
+      alert(`Failed to delete report: ${error.message}`)
       setDeleting(false)
+      setConfirmingDelete(false)
       return
     }
     navigate(`/services/${report.service_id}`)
@@ -277,12 +277,22 @@ export function ReportView() {
 
         {isAdmin && (
           <button
-            onClick={handleDelete}
+            onClick={() => setConfirmingDelete(true)}
             disabled={deleting}
             className="w-full mb-4 text-center px-4 py-2.5 border border-red-200 text-red-600 rounded-lg text-sm font-medium hover:bg-red-50 disabled:opacity-50 transition-colors no-print"
           >
             {deleting ? 'Deleting...' : 'Delete Report'}
           </button>
+        )}
+
+        {confirmingDelete && report && (
+          <ConfirmDeleteModal
+            title={`Delete Service Report ${report.report_number ? srNum(report.report_number) : ''}?`}
+            warning="This will permanently remove this report and its spare part records. This cannot be undone."
+            confirming={deleting}
+            onConfirm={handleDelete}
+            onCancel={() => setConfirmingDelete(false)}
+          />
         )}
 
         <div className="border border-gray-200 rounded-xl overflow-hidden print:border-0 print:rounded-none">
