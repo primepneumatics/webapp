@@ -35,9 +35,26 @@ export function SparePartsList() {
       setter({ ...f, [field]: e.target.value })
   }
 
+  function duplicateOf(code: string, excludeId?: string) {
+    const normalized = code.trim().toUpperCase()
+    if (!normalized) return null
+    return parts.find(p => p.id !== excludeId && p.code.trim().toUpperCase() === normalized) ?? null
+  }
+
+  const addDuplicate = duplicateOf(form.code)
+  const query = `${form.code} ${form.name}`.trim().toLowerCase()
+  const similarParts = query
+    ? parts.filter(p => p.id !== addDuplicate?.id && `${p.code} ${p.name} ${p.size ?? ''}`.toLowerCase().includes(query)).slice(0, 5)
+    : []
+
+  function friendlyError(err: { code?: string; message: string }) {
+    return err.code === '23505' ? 'A spare part with this code already exists.' : err.message
+  }
+
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault()
     setError('')
+    if (addDuplicate) { setError(`A spare part with this code already exists: ${addDuplicate.name}.`); return }
     setSaving(true)
     const { data, error } = await supabase.from('spare_parts').insert({
       code: form.code.trim().toUpperCase(),
@@ -45,7 +62,7 @@ export function SparePartsList() {
       size: form.size.trim() || null,
     }).select().single()
 
-    if (error) { setError(error.message); setSaving(false); return }
+    if (error) { setError(friendlyError(error)); setSaving(false); return }
     setParts(prev => [...prev, data].sort((a, b) => a.code.localeCompare(b.code)))
     setForm(empty)
     setSaving(false)
@@ -53,13 +70,15 @@ export function SparePartsList() {
 
   async function handleEdit(id: string) {
     setError('')
+    const dup = duplicateOf(editForm.code, id)
+    if (dup) { setError(`A spare part with this code already exists: ${dup.name}.`); return }
     const { error } = await supabase.from('spare_parts').update({
       code: editForm.code.trim().toUpperCase(),
       name: editForm.name.trim(),
       size: editForm.size.trim() || null,
     }).eq('id', id)
 
-    if (error) { setError(error.message); return }
+    if (error) { setError(friendlyError(error)); return }
     setParts(prev => prev.map(p => p.id === id
       ? { ...p, code: editForm.code.toUpperCase(), name: editForm.name, size: editForm.size.trim() || null }
       : p
@@ -103,8 +122,25 @@ export function SparePartsList() {
                 className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
             </div>
           </div>
+          {addDuplicate && (
+            <p className="text-xs text-red-600 mb-2">
+              A spare part with this code already exists: {addDuplicate.name}{addDuplicate.size ? ` (${addDuplicate.size})` : ''}.
+            </p>
+          )}
+          {!addDuplicate && similarParts.length > 0 && (
+            <div className="mb-3 bg-amber-50 border border-amber-200 rounded-lg p-2.5">
+              <p className="text-xs text-amber-800 mb-1.5">Similar existing spare parts — check before adding a new one:</p>
+              <div className="space-y-1">
+                {similarParts.map(p => (
+                  <p key={p.id} className="text-xs text-gray-600">
+                    <span className="font-mono text-gray-400">{p.code}</span> — {p.name}{p.size ? ` (${p.size})` : ''}
+                  </p>
+                ))}
+              </div>
+            </div>
+          )}
           {error && <p className="text-xs text-red-600 mb-2">{error}</p>}
-          <button type="submit" disabled={saving}
+          <button type="submit" disabled={saving || !!addDuplicate}
             className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
             {saving ? 'Adding...' : '+ Add'}
           </button>
@@ -126,8 +162,14 @@ export function SparePartsList() {
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
                     <input value={editForm.size} onChange={set(editForm, setEditForm)('size')} placeholder="Size"
                       className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    {duplicateOf(editForm.code, p.id) && (
+                      <p className="text-xs text-red-600">
+                        A spare part with this code already exists: {duplicateOf(editForm.code, p.id)?.name}.
+                      </p>
+                    )}
                     <div className="flex gap-2 pt-1">
-                      <button onClick={() => handleEdit(p.id)} className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-medium">Save</button>
+                      <button onClick={() => handleEdit(p.id)} disabled={!!duplicateOf(editForm.code, p.id)}
+                        className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-xs font-medium disabled:opacity-50">Save</button>
                       <button onClick={() => setEditId(null)} className="px-3 py-1.5 border border-gray-200 text-gray-500 rounded-lg text-xs">Cancel</button>
                     </div>
                   </div>

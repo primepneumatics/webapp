@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { supabase } from '../../lib/supabase'
 import { Layout } from '../../components/Layout'
 import { SuggestInput } from '../../components/SuggestInput'
+import { SparePartPicker } from '../../components/SparePartPicker'
 import { useEngineerSuggestions } from '../../hooks/useEngineerSuggestions'
 import { toISODate, toDisplayDate, today } from '../../utils/dateEngine'
 import { calcRemaining, addDaysToDate, type PartState } from '../../utils/machineParts'
@@ -29,7 +30,6 @@ export function ReportNew() {
   const [spareParts, setSpareParts] = useState<SparePart[]>([])
 
   const [trackedParts, setTrackedParts] = useState<TrackedPart[]>([])
-  const [trackPartId, setTrackPartId] = useState('')
 
   const [reportDate, setReportDate] = useState(today())
   const [totalRunHours, setTotalRunHours] = useState('')
@@ -97,11 +97,9 @@ export function ReportNew() {
     setFabError(data ? 'A machine with this FAB Number already exists.' : '')
   }
 
-  function addTrackedPart() {
-    const part = spareParts.find(p => p.id === trackPartId)
-    if (!part || trackedParts.some(tp => tp.spare_part_id === part.id)) return
+  function addTrackedPart(part: SparePart) {
+    if (trackedParts.some(tp => tp.spare_part_id === part.id)) return
     setTrackedParts(prev => [...prev, { spare_part_id: part.id, code: part.code, name: part.name, size: part.size, qty: '1', hours_per_day: '24', remaining_hrs: '0', maintenance_days: '0' }])
-    setTrackPartId('')
   }
 
   function removeTrackedPart(spare_part_id: string) {
@@ -339,19 +337,12 @@ export function ReportNew() {
           {/* Spare item hours — dynamic, add from the spare parts list */}
           <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
             <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">Spare Item Hours</h3>
-            <div className="flex gap-2">
-              <select value={trackPartId} onChange={e => setTrackPartId(e.target.value)}
-                className="flex-1 min-w-0 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
-                <option value="">Select spare part...</option>
-                {spareParts.filter(p => !trackedParts.some(tp => tp.spare_part_id === p.id)).map(p => (
-                  <option key={p.id} value={p.id}>{p.code} — {p.name}{p.size ? ` (${p.size})` : ''}</option>
-                ))}
-              </select>
-              <button type="button" onClick={addTrackedPart} disabled={!trackPartId}
-                className="shrink-0 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-40">
-                + Add
-              </button>
-            </div>
+            <SparePartPicker
+              parts={spareParts}
+              excludeIds={trackedParts.map(tp => tp.spare_part_id)}
+              onSelect={addTrackedPart}
+              placeholder="Search spare parts by code or name..."
+            />
 
             {trackedParts.length === 0 ? (
               <p className="text-xs text-gray-400">No spare parts added for this report yet.</p>
