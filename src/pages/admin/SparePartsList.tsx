@@ -21,6 +21,7 @@ export function SparePartsList() {
   const [error, setError] = useState('')
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [confirmingDeleteId, setConfirmingDeleteId] = useState<string | null>(null)
+  const [search, setSearch] = useState('')
 
   useEffect(() => {
     supabase.from('spare_parts').select('*').order('code').then(({ data }) => {
@@ -46,6 +47,11 @@ export function SparePartsList() {
   const similarParts = query
     ? parts.filter(p => p.id !== addDuplicate?.id && `${p.code} ${p.name} ${p.size ?? ''}`.toLowerCase().includes(query)).slice(0, 5)
     : []
+
+  const searchQuery = search.trim().toLowerCase()
+  const visibleParts = searchQuery
+    ? parts.filter(p => `${p.code} ${p.name} ${p.size ?? ''}`.toLowerCase().includes(searchQuery))
+    : parts
 
   function friendlyError(err: { code?: string; message: string }) {
     return err.code === '23505' ? 'A spare part with this code already exists.' : err.message
@@ -146,13 +152,27 @@ export function SparePartsList() {
           </button>
         </form>
 
+        {parts.length > 0 && (
+          <input
+            type="text"
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            placeholder="Search spare parts by code or name..."
+            className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm mb-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          />
+        )}
+
         {parts.length === 0 ? (
           <div className="bg-white border border-gray-200 rounded-xl p-8 text-center">
             <p className="text-sm text-gray-400">No spare parts added yet.</p>
           </div>
+        ) : visibleParts.length === 0 ? (
+          <div className="bg-white border border-gray-200 rounded-xl p-8 text-center">
+            <p className="text-sm text-gray-400">No spare parts match "{search.trim()}".</p>
+          </div>
         ) : (
           <div className="space-y-2">
-            {parts.map(p => (
+            {visibleParts.map(p => (
               <div key={p.id} className="bg-white border border-gray-200 rounded-xl p-4">
                 {editId === p.id ? (
                   <div className="space-y-2">
